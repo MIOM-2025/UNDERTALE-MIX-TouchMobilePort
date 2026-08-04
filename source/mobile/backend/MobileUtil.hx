@@ -50,7 +50,6 @@ class MobileUtil
 						if (mode.Name == null || mode.Folder == null) continue;
 
 						if (doNotSeperate)
-							// Keeping the "Name|Folder" format, so initDirectory() doesn't break
 							ArrayReturn.push(mode.Name + "|" + mode.Folder);
 						else
 							ArrayReturn.push(mode.Name);
@@ -63,7 +62,6 @@ class MobileUtil
 		return ArrayReturn;
 	}
 
-	// always force path due to haxe
 	public static var currentDirectory:String;
 	public static function initDirectory():String {
 		var daPath:String = '';
@@ -72,7 +70,6 @@ class MobileUtil
 
 		var curStorageType:String = File.getContent(getStorageTypePath());
 
-		/* Put this there because I don't want to override original paths, also brokes the normal storage system */
 		for (line in getCustomStorageDirectories(true))
 		{
 			if (line.startsWith(curStorageType) && (line != '' || line != null)) {
@@ -81,21 +78,14 @@ class MobileUtil
 			}
 		}
 
-		/* Hardcoded Storage Types, these types cannot be changed by Custom Type
-		 * paths using "/sdcard/" location because otherwise engine crashes. -ArkoseLabs
-		 **/
 		switch(curStorageType) {
 			case 'EXTERNAL':
 				daPath = "/sdcard/.CodenameEngine";
-			/* obb doesnt work and I dont wanna fix it -ArkoseLabs
-			case 'EXTERNAL_OBB':
-				daPath = "/sdcard/Android/obb/com.yoshman29.codenameengine";
-			*/
 			case 'EXTERNAL_MEDIA':
 				daPath = "/sdcard/Android/media/com.yoshman29.codenameengine";
 			case 'EXTERNAL_DATA':
 				daPath = "/sdcard/Android/data/com.yoshman29.codenameengine/files";
-			default: //technically not needed but here for safety -ArkoseLabs
+			default:
 				if (daPath == null || daPath == '') daPath = "/sdcard/Android/data/com.yoshman29.codenameengine/files";
 		}
 		daPath = Path.addTrailingSlash(daPath);
@@ -110,7 +100,6 @@ class MobileUtil
 		{
 			Application.current.window.alert("Looks like you doesn't have directory named\n" + MobileUtil.getAssetDirectory() +
 			"\nBut maybe this couldn't be right, android loves to give errors like this\nPress OK & let's see what happens\nCurrent Error You Got:\n" + e, "Warning!");
-			//lime.system.System.exit(1);
 		}
 
 		try
@@ -122,15 +111,11 @@ class MobileUtil
 		{
 			Application.current.window.alert("Looks like you doesn't have directory named\n" + MobileUtil.getDirectory() + "mods/" + 
 			"\nBut maybe this couldn't be right, android loves to give errors like this\nPress OK & let's see what happens\nCurrent Error You Got:\n" + e, "Warning!");
-			//lime.system.System.exit(1);
 		}
 
 		return daPath;
 	}
 
-	/**
-	 * Requests Storage Permissions on Android Platform.
-	 */
 	public static function getPermissions():Void
 	{
 		if (AndroidVersion.SDK_INT >= AndroidVersionCode.TIRAMISU)
@@ -186,9 +171,6 @@ class MobileUtil
 		#end
 	}
 
-	/**
-	 * Saves a file to the external storage.
-	 */
 	public static function save(fileName:String = 'Ye', fileExt:String = '.txt', fileData:String = 'Nice try, but you failed, try again!', ?alert:Bool = true):Void
 	{
 		final folder:String = #if android MobileUtil.getDirectory() + #else Sys.getCwd() + #end 'saves/';
@@ -210,7 +192,11 @@ class MobileUtil
 	#end
 
 	/**
-	 * @param folders Optional list of specific folders (e.g. ["assets/data/"]). If null, copies all assets.
+	 * 复制 assets 中的资源到外部存储。
+	 * @param folders 可选，指定要复制的子文件夹前缀列表（例如 ["assets/data/"]）。如果为 null，则复制所有 assets。
+	 *                注意：无论 folders 如何，都会强制复制 assets/mods/ 文件夹（如果存在）。
+	 * @param onProgress 进度回调，参数：(文件路径, 当前索引, 总数)
+	 * @param onComplete 完成回调
 	 */
 	public static function copyAssets(folders:Array<String> = null, onProgress:String->Int->Int->Void = null, onComplete:Void->Void = null):Void {
 		#if mobile
@@ -225,13 +211,24 @@ class MobileUtil
 					cleanPath = cleanPath.substring(colonIndex + 1);
 				}
 
+				// 只处理 assets/ 开头的文件
 				if (!StringTools.startsWith(cleanPath, "assets/")) return false;
+
+				// 如果 folders 为 null，则复制所有
 				if (folders == null) return true;
 
+				// 否则检查是否匹配任意指定的前缀，或者强制匹配 mods 文件夹
+				var inFolders = false;
 				for (f in folders) {
-					if (StringTools.startsWith(cleanPath, f)) return true;
+					if (StringTools.startsWith(cleanPath, f)) {
+						inFolders = true;
+						break;
+					}
 				}
-				return false;
+				// 强制包含 assets/mods/（无论 folders 中是否包含）
+				var isMods = StringTools.startsWith(cleanPath, "assets/mods/");
+
+				return inFolders || isMods;
 			});
 
 			var total = toCopy.length;
@@ -250,11 +247,10 @@ class MobileUtil
 				}
 
 				var fullPath = Path.join([rootTarget, cleanPath]);
-
 				var directory = Path.directory(fullPath);
 				if (!FileSystem.exists(directory)) FileSystem.createDirectory(directory);
-				var shouldCopy = !FileSystem.exists(fullPath);
 
+				var shouldCopy = !FileSystem.exists(fullPath);
 				if (!shouldCopy) {
 					try {
 						var assetBytes = Assets.getBytes(assetKey);
