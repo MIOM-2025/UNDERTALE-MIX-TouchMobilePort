@@ -2,7 +2,7 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 	<app
-		title="UNDERTALE MIX'" main="funkin.backend.system.Main"
+		title="UNDERTALE MIX" main="funkin.backend.system.Main"
 		file="UNDERTALE-MIX" packageName="com.undertalemix.miomport"
 		package="com.undertalemix.miomport"
 		version="1.0.1" company="ChezzarCat" />
