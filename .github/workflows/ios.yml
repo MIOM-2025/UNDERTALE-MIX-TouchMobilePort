@@ -1,77 +1,42 @@
 name: iOS Build
 on:
+  push:
+    branches: ['master']
   workflow_dispatch:
-  workflow_call:
-env: 
-  PROJECT_NAME: CodenameEngine
-  HAXE_VERSION: 4.3.7
-  HXCPP_COMPILE_CACHE: ${{ github.workspace }}/.hxcpp_cache
 jobs:
   build:
     name: iOS Build
-    permissions:
-      actions: write
-      contents: read
-    runs-on: macos-latest
+    permissions: write-all
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
+      - name: Pulling the source
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
+          submodules: 'recursive'
+      - name: Initialize submodules # just to make sure  - Nex
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
       - name: Setting up Haxe
-        uses: krdlab/setup-haxe@v2
+        uses: ShadowEngineTeam/setup-haxe@main
         with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-      - name: Restore Previous Cache
-        uses: actions/cache@v4
+          haxe-version: 4.3.7
+      - name: Restore existing build cache for faster compilation
+        uses: actions/cache@v4.2.3
         with:
           # not caching the bin folder to prevent asset duplication and stuff like that
           key: cache-build-ios
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
-            ~/.haxelib/
-            export/release/android/haxe/
-            export/release/android/obj/
-            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
-            export/release/ios/${{ env.PROJECT_NAME }}/obj/
-            export\release\windows\haxe\
-            export\release\windows\obj\
-            .haxelib\
+            export/release/ios/dustin/haxe/
           restore-keys: |
             cache-build-ios
       - name: Installing/Updating libraries
         run: |
-          haxe -cp commandline -D analyzer-optimize --run Main setup -s
-      - name: Fix Haxelib
-        run: |
-          haxelib set lime git
-          haxelib set hxcpp git
-          haxelib set flixel git
-          haxelib set flixel-addons git
-          haxelib set flixel-animate git
-          haxelib set hxdiscord_rpc git
+          haxe -cp commandline -D analyzer-optimize --run Main setup -s --no-vscheck
       - name: Building the game
-        run: |
-          haxelib run lime build ios -nosign -final -D COMPILE_EXPERIMENTAL
-
-      - name: Make Ipa
-        run: |
-          cd export/release/ios/build/Release-iphoneos
-          mkdir Payload
-          mv *.app Payload
-          zip -r ${{ env.PROJECT_NAME }}.ipa Payload
-          
-      - name: Uploading artifact (entire build)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Codename Engine iOS
-          path: export/release/ios/build/Release-iphoneos/*
-      - name: Clear Previous Cache
+        run: haxelib run lime build ios -nosign
+      - name: Clearing already existing cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -90,24 +55,27 @@ jobs:
                 console.log("Cache cleared.")
               }
             }
-      - name: Upload New Cache
-        uses: actions/cache@v4
+      - name: Making ipa file
+        run: |
+          brew install ldid
+          cd export/release/ios/build/Release-iphoneos/dustin.app
+          ldid -S../../../dustin/dustin.entitlements dustin
+          cd ..
+          mkdir Payload
+          mv dustin.app Payload
+          zip -r dustin.ipa Payload
+      - name: Uploading artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dustin' IOS
+          path: export/release/ios/build/Release-iphoneos/*.ipa
+      - name: Uploading new cache
+        uses: actions/cache@v4.2.3
         with:
           # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-ios
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
-            ~/.haxelib/
-            export/release/android/haxe/
-            export/release/android/obj/
-            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
-            export/release/ios/${{ env.PROJECT_NAME }}/obj/
-            export\release\windows\haxe\
-            export\release\windows\obj\
-            .haxelib\
+            export/release/ios/dustin/haxe
           restore-keys: |
             cache-build-ios

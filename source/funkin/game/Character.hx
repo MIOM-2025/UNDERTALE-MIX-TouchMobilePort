@@ -1,10 +1,6 @@
 package funkin.game;
 
-#if sys
 import sys.FileSystem;
-#elseif js
-import js.html.FileSystem;
-#end
 import flixel.util.FlxSpriteUtil;
 import openfl.display.Graphics;
 import flixel.util.typeLimit.OneOfTwo;
@@ -30,7 +26,6 @@ import haxe.Exception;
 import haxe.io.Path;
 import haxe.xml.Access;
 import openfl.geom.ColorTransform;
-import animate.FlxAnimateFrames;
 
 using StringTools;
 
@@ -51,11 +46,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	public var iconColor:Null<FlxColor> = null;
 	public var gameOverCharacter:String = Character.FALLBACK_DEAD_CHARACTER;
 
-	/*
-		Whether to use the center or the top-left of the character as the camera origin point.
-		This is for compatibility with old texture atlas characters.
-	*/
-	public var centeredCamera:Bool = true;
 	public var cameraOffset:FlxPoint = FlxPoint.get(0, 0);
 	public var globalOffset:FlxPoint = FlxPoint.get(0, 0);
 	public var extraOffset:FlxPoint = FlxPoint.get(0, 0);
@@ -118,19 +108,11 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	}
 
 	public function swapLeftRightAnimations() {
-		// Find all "alternate" poses
-		var variants = ['']; // Pre-fill with empty string
-		var pose = 'singRIGHT'; // Any "sing" animation string could work, really
-		for (a in xml.nodes.anim) {
-			if (a.att.name != pose && StringTools.startsWith(a.att.name, pose)) {
-				variants.push(a.att.name.substring(pose.length));
-			}
-		}
+		CoolUtil.switchAnimFrames(animation.getByName('singRIGHT'), animation.getByName('singLEFT'));
+		CoolUtil.switchAnimFrames(animation.getByName('singRIGHTmiss'), animation.getByName('singLEFTmiss'));
 
-		for (i in variants) {
-			CoolUtil.swapAnims(animation, 'singLEFT$i', 'singRIGHT$i');
-			switchOffset('singLEFT$i', 'singRIGHT$i');
-		}
+		switchOffset('singLEFT', 'singRIGHT');
+		switchOffset('singLEFTmiss', 'singRIGHTmiss');
 
 		__swappedLeftRightAnims = true;
 	}
@@ -139,10 +121,8 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	@:noCompletion var isDanceLeftDanceRight:Bool = false;
 
 	override function update(elapsed:Float) {
-		scripts.call("update", [elapsed]);
-
 		super.update(elapsed);
-
+		scripts.call("update", [elapsed]);
 		if (stunned) {
 			__stunnedTime += elapsed;
 			if (__stunnedTime > Flags.STUNNED_TIME)
@@ -153,8 +133,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 			tryDance();
 
 		__lockAnimThisFrame = false;
-
-		scripts.call("postUpdate", [elapsed]);
 	}
 
 	private var danced:Bool = false;
@@ -174,7 +152,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 	public function tryDance() {
 		var event = new CancellableEvent();
-		scripts.call("onTryDance", [event]);
+		script.call("onTryDance", [event]);
 		if (event.cancelled)
 			return;
 
@@ -206,18 +184,16 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	}
 
 	public override function measureHit(curMeasure:Int)
-		scripts.call("measureHit", [curMeasure]);
+		script.call("measureHit", [curMeasure]);
 
 	public override function stepHit(curStep:Int)
 		scripts.call("stepHit", [curStep]);
 
 	@:noCompletion var __reverseDrawProcedure:Bool = false;
 	public override function getScreenBounds(?newRect:FlxRect, ?camera:FlxCamera):FlxRect {
-		if (isFlippedOffsets()) {
-			flipX = !flipX;
+		if (__reverseDrawProcedure) {
 			scale.x *= -1;
 			var bounds:FlxRect = super.getScreenBounds(newRect, camera);
-			flipX = !flipX;
 			scale.x *= -1;
 			return bounds;
 		}
@@ -263,13 +239,13 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	public var ghostDraw:Bool = false;
 	public override function draw() {
 		var e = EventManager.get(DrawEvent).recycle();
-		scripts.call("draw", [e]);
+		script.call("draw", [e]);
 
 		preDraw();
 		super.draw();
 		postDraw();
 
-		scripts.call("postDraw", [e]);
+		script.call("postDraw", [e]);
 	}
 
 	public var singAnims = ["singLEFT", "singDOWN", "singUP", "singRIGHT"];
@@ -282,7 +258,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 	public function playSingAnim(direction:Int, suffix:String = "", Context:PlayAnimContext = SING, ?Force:Null<Bool> = null, Reversed:Bool = false, Frame:Int = 0)
 	{
 		var event = EventManager.get(DirectionAnimEvent).recycle(getSingAnim(direction, suffix), direction, suffix, Context, Reversed, Frame, Force);
-		scripts.call("onPlaySingAnim", [event]);
+		script.call("onPlaySingAnim", [event]);
 		if (event.cancelled) return;
 
 		playSingAnimUnsafe(event.direction, hasAnimation(event.animName) ? event.suffix : "", event.context, event.force, event.reversed, event.frame);
@@ -290,7 +266,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 	public function playSingAnimUnsafe(direction:Int, suffix:String = "", Context:PlayAnimContext = SING, Force:Bool = true, Reversed:Bool = false, Frame:Int = 0) {
 		var event = EventManager.get(DirectionAnimEvent).recycle(getSingAnim(direction, suffix), direction, suffix, Context, Reversed, Frame, Force);
-		scripts.call("playSingAnimUnsafe", [event]);
+		script.call("playSingAnimUnsafe", [event]);
 		if (event.cancelled) return;
 
 		playAnim(event.animName, event.force, event.context, event.reversed, event.frame);
@@ -303,13 +279,13 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 		super.playAnim(event.animName, event.force, event.context, event.reverse, event.startingFrame);
 
-		offset.set((isPlayer != playerOffsets) ? globalOffset.x : -globalOffset.x, -globalOffset.y);
+		offset.set(globalOffset.x * (isPlayer != playerOffsets ? 1 : -1), -globalOffset.y);
 		if (event.context == SING || event.context == MISS)
 			lastHit = Conductor.songPosition;
 	}
 
 	public inline function getCameraPosition() {
-		var midpoint:FlxPoint = centeredCamera ? getMidpoint() : getPosition();
+		var midpoint:FlxPoint = getMidpoint();
 		var event = EventManager.get(PointEvent).recycle(
 			midpoint.x + (isPlayer ? -100 : 150) + globalOffset.x + cameraOffset.x,
 			midpoint.y - 100 + globalOffset.y + cameraOffset.y);
@@ -340,7 +316,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 			scale.x *= -1;
 			__reverseTrailProcedure = true;
 		}
-
+	
 	public dynamic function afterTrailCache()
 		if (__reverseTrailProcedure) {
 			flipX = !flipX;
@@ -364,7 +340,7 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 		buildCharacter(xml);
 	}
 
-	public function buildCharacter(xml:Access) {
+	public inline function buildCharacter(xml:Access) {
 		for(node in xml.elements)
 			switch(node.name) {
 				case "use-extension" | "extension" | "ext":
@@ -394,31 +370,12 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 			updateHitbox();
 		}
 		if (xml.x.exists("antialiasing")) antialiasing = (xml.x.get("antialiasing") == "true");
-		if (xml.x.exists("applyStageMatrix")) applyStageMatrix = (xml.x.get("applyStageMatrix") == "true");
 		if (xml.x.exists("sprite")) sprite = xml.x.get("sprite");
-		if (xml.x.exists("swfMode")) animateSettings.swfMode = (xml.x.get("swfMode") == "true");
-		if (xml.x.exists("cacheOnLoad")) animateSettings.cacheOnLoad = (xml.x.get("cacheOnLoad") == "true");
-		if (xml.x.exists("filterQuality")) {
-			var val = xml.x.get("filterQuality");
-			var qualityInt = Std.parseInt(val);
-			if (qualityInt != null) {
-				animateSettings.filterQuality = cast(qualityInt, FilterQuality);
-			} else {
-				var values = ["high", "medium", "low", "rudy"];
-				var index = values.indexOf(val.toLowerCase());
-				if (index > -1)
-					animateSettings.filterQuality = cast(index, FilterQuality);
-			}
-		}
 
 		var hasInterval:Bool = xml.x.exists("interval");
 		if (hasInterval) beatInterval = Std.parseInt(xml.x.get("interval"));
 
 		loadSprite(Paths.image('characters/$sprite'));
-
-		if (xml.x.exists("centercam")) centeredCamera = (xml.x.get("centercam") == "true");
-		else centeredCamera = !isAnimate;
-
 		for(node in xml.elements) {
 			switch(node.name) {
 				case "anim":
@@ -451,11 +408,11 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 	public static var characterProperties:Array<String> = [
 		"x", "y", "sprite", "scale", "antialiasing",
-		"flipX", "camx", "camy", "centercam", "isPlayer", "icon",
-		"color", "gameOverChar", "holdTime", "applyStageMatrix"
+		"flipX", "camx", "camy", "isPlayer", "icon",
+		"color", "gameOverChar", "holdTime"
 	];
 	public static var characterAnimProperties:Array<String> = [
-		"name", "anim", "label", "x", "y", "fps", "loop", "indices"
+		"name", "anim", "x", "y", "fps", "loop", "indices"
 	];
 
 	public inline function buildXML(?animsOrder:Array<String>):Xml {
@@ -467,7 +424,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 		if (cameraOffset.x != 0) xml.set("camx", Std.string(FlxMath.roundDecimal(cameraOffset.x, 2)));
 		if (cameraOffset.y != 0) xml.set("camy", Std.string(FlxMath.roundDecimal(cameraOffset.y, 2)));
-		if (centeredCamera != !isAnimate) xml.set("centercam", centeredCamera ? "true" : "false");
 
 		if (holdTime != 4) xml.set("holdTime", Std.string(FlxMath.roundDecimal(holdTime, 4)));
 
@@ -483,7 +439,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 		if (!antialiasing) xml.set("antialiasing", antialiasing == true ? "true" : "false");
 
 		if (isPlayer) xml.set("isPlayer", isPlayer == true ? "true" : "false");
-		if (isAnimate) xml.set("applyStageMatrix", applyStageMatrix ? "true" : "false");
 
 		var anims:Array<AnimData> = [];
 		if (animsOrder != null) {
@@ -508,9 +463,6 @@ class Character extends FunkinSprite implements IBeatReceiver implements IOffset
 
 			if (anim.indices.length > 0)
 				animXml.set("indices", CoolUtil.formatNumberRange(anim.indices));
-
-			if (anim.label)
-				animXml.set("label", "true");
 
 			xml.addChild(animXml);
 		}

@@ -1,84 +1,54 @@
 name: Android Build
-
 on:
+  push:
+    branches: ['master']
   workflow_dispatch:
-  workflow_call:
-env:
-  HAXE_VERSION: 4.3.7
-  HXCPP_COMPILE_CACHE: ${{ github.workspace }}/.hxcpp_cache
-
 jobs:
   build:
     name: Android Build
-    permissions:
-      actions: write
-      contents: read
-    runs-on: ubuntu-latest
+    permissions: write-all
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
+      - name: Pulling the source
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
+          submodules: 'recursive'
+      - name: Initialize submodules # just to make sure  - Nex
+        run: |
+          git submodule update --init --recursive
+          git submodule update --recursive --remote
       - name: Setting up Haxe
-        uses: krdlab/setup-haxe@v2
+        uses: ShadowEngineTeam/setup-haxe@main
         with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-
-      - name: Setup Android NDK
-        id: setup-ndk
-        uses: nttld/setup-ndk@main
-        with:
-          ndk-version: r25c
-      - name: Restore Previous Cache
-        uses: actions/cache@v4
+          haxe-version: 4.3.7
+      - name: Restore existing build cache for faster compilation
+        uses: actions/cache@v4.2.3
         with:
           # not caching the bin folder to prevent asset duplication and stuff like that
           key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
-            ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
-            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
-            export/release/ios/${{ env.PROJECT_NAME }}/obj/
-            export\release\windows\haxe\
-            export\release\windows\obj\
-            .haxelib\
           restore-keys: |
             cache-build-android
       - name: Installing/Updating libraries
         run: |
           haxe -cp commandline -D analyzer-optimize --run Main setup -s
-
-      - name: Configure Android
+      - name: Configuring Android
         run: |
-          haxelib run lime setup -alias -y
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_HOME
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
           haxelib run lime config ANDROID_SETUP true
-      - name: Fix Haxelib
-        run: |
-          haxelib set lime git
-          haxelib set hxcpp git
-          haxelib set flixel git
-          haxelib set flixel-addons git
-          haxelib set flixel-animate git
-          haxelib set hxdiscord_rpc git
       - name: Building the game
-        run: |
-          haxelib run lime build android -final -D ONLY_ARM64 -D COMPILE_EXPERIMENTAL
-      - name: Uploading artifact (entire build)
+        run: haxelib run lime build android -ONLY_ARM64
+      - name: Uploading artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Codename Engine Android
-          path: export/release/android/bin/app/build/outputs/apk/release/*
-      - name: Clear Previous Cache
+          name: Dustin' Android
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+      - name: Clearing already existing cache
         uses: actions/github-script@v6
         with:
           script: |
@@ -97,24 +67,14 @@ jobs:
                 console.log("Cache cleared.")
               }
             }
-      - name: Upload New Cache
-        uses: actions/cache@v4
+      - name: Uploading new cache
+        uses: actions/cache@v4.2.3
         with:
           # caching again since for some reason it doesnt work with the first post cache shit
           key: cache-build-android
           path: |
-            ~/.gradle
             .haxelib/
-            /home/runner/haxelib/
-            /Users/runner/haxelib/
-            C:/hostedtoolcache/windows/haxe/4.3.6/x64/lib/
-            ~/.haxelib/
             export/release/android/haxe/
             export/release/android/obj/
-            export/release/ios/${{ env.PROJECT_NAME }}/haxe/
-            export/release/ios/${{ env.PROJECT_NAME }}/obj/
-            export\release\windows\haxe\
-            export\release\windows\obj\
-            .haxelib\
           restore-keys: |
             cache-build-android

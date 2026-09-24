@@ -290,11 +290,6 @@ class AlphabetEditor extends UIState {
 		}
 
 		DiscordUtil.call("onEditorLoaded", ["Alphabet Editor", __typeface]);
-
-		addDPad("LEFT_RIGHT");
-		addDPadCamera();
-		mobileManager.x += 225;
-		//mobileManager.y -= 25;
 	}
 
 	override function destroy() {
@@ -309,7 +304,6 @@ class AlphabetEditor extends UIState {
 	var lastChar:String = "";
 	public override function update(elapsed:Float) {
 		super.update(elapsed);
-		handleMobileControl();
 
 		if (glyphChar.label.text != lastChar) {
 			if (glyphChar.label.text == "") {
@@ -384,13 +378,6 @@ class AlphabetEditor extends UIState {
 			tape.text += tape.manualLetters.join(" ");
 		}
 		tape.x = lerp(tape.x, targetX, 0.25);
-	}
-
-	function handleMobileControl() {
-		if (mobileCJustPressed("LEFT"))
-			_tape_left(null);
-		if (mobileCJustPressed("RIGHT"))
-			_tape_right(null);
 	}
 
 	function updateTape() {

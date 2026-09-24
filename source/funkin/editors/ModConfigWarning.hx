@@ -9,7 +9,7 @@ class ModConfigWarning extends UIState {
 	var library:ModsFolderLibrary = null;
 	var goToState:Class<FlxState>;
 
-	public static var defaultModConfigText = 
+	public static inline var defaultModConfigText = 
 '[Common] # This section applies the \'MOD_\' prefix to the flags so you don\'t have to.
 NAME="YOUR MOD NAME HERE"
 DESCRIPTION="YOUR MOD DESCRIPTION HERE"
@@ -17,16 +17,15 @@ AUTHOR="YOU/YOUR TEAM HERE"
 VERSION="YOUR MOD\'S VERSION HERE"
 
 # DO NOT EDIT!! this is used to check for version compatibility!
-API_VERSION=${Flags.CURRENT_API_VERSION}
+API_VERSION=1
 
 DOWNLOAD_LINK="YOUR MOD PAGE LINK HERE"
 
 # Not supported yet
-;MOD_ICON64="path/to/icon64"
-;MOD_ICON32="path/to/icon32"
-;MOD_ICON16="path/to/icon16"
-# The path starts in "your-mod/images/", do not add image extension.
-ICON="path/to/icon"
+;MOD_ICON64="path/to/icon64.png"
+;MOD_ICON32="path/to/icon32.png"
+;MOD_ICON16="path/to/icon16.png"
+ICON="path/to/icon.png"
 
 [Flags] # This section doesn\'t apply any prefix.
 DISABLE_WARNING_SCREEN=true

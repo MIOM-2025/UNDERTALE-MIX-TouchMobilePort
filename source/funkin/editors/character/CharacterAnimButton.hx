@@ -2,13 +2,18 @@ package funkin.editors.character;
 
 import flixel.text.FlxText.FlxTextFormat;
 import flixel.text.FlxText.FlxTextFormatMarkerPair;
+import flxanimate.animate.FlxAnim.FlxSymbolAnimation;
+import flxanimate.animate.FlxSymbol;
+import flxanimate.animate.FlxElement;
+import flxanimate.animate.SymbolParameters;
+import flxanimate.animate.FlxKeyFrame;
+import flxanimate.animate.FlxTimeline;
 import flixel.graphics.frames.FlxFrame;
 import flixel.animation.FlxAnimation;
 import openfl.geom.Rectangle;
 import funkin.backend.utils.XMLUtil.AnimData;
 import flixel.math.FlxPoint;
 import flixel.util.FlxColor;
-import funkin.editors.character.CharacterAnimsWindow;
 
 using StringTools;
 
@@ -21,7 +26,6 @@ class CharacterAnimButton extends UIButton {
 	public var animationDisplayBG:UISliceSprite;
 	public var nameTextBox:UITextBox;
 	public var animTextBox:UIAutoCompleteTextBox;
-	public var animLabelCheckbox:UICheckbox;
 	public var positionXStepper:UINumericStepper;
 	public var positionYStepper:UINumericStepper;
 	public var fpsStepper:UINumericStepper;
@@ -112,19 +116,12 @@ class CharacterAnimButton extends UIButton {
 		foldableButtons.push(fpsStepper);
 		addLabelOn(fpsStepper, translate("fps"), 12);
 
-		loopedCheckbox = new UICheckbox(fpsStepper.x + 82 - 32 + 26, fpsStepper.y, translate("looping"), animData.loop, 0, true);
+		loopedCheckbox = new UICheckbox(fpsStepper.x + 82 - 32 + 26, fpsStepper.y, "Looping?", animData.loop, 0, true);
 		loopedCheckbox.onChecked = (newLooping:Bool) -> {this.changeLooping(newLooping);};
 		members.push(loopedCheckbox);
 		foldableButtons.push(loopedCheckbox);
 
 		loopedCheckbox.x += 8; loopedCheckbox.y += 6;
-
-		if (parent.character.isAnimate) {
-			animLabelCheckbox = new UICheckbox(loopedCheckbox.x, animTextBox.y + 26, translate("label"), animData.label, 0, true);
-			animLabelCheckbox.onChecked = (newLabel:Bool) -> {this.changeLabel(newLabel);};
-			members.push(animLabelCheckbox);
-			foldableButtons.push(animLabelCheckbox);
-		}
 
 		indicesTextBox = new UITextBox(nameTextBox.x, nameTextBox.y, CoolUtil.formatNumberRange(animData.indices.getDefault([]), ", "), 278, 22, false, true);
 		indicesTextBox.onChange = (text:String) -> {
@@ -207,7 +204,6 @@ class CharacterAnimButton extends UIButton {
 
 		fpsStepper.follow(this, 282, 118);
 		loopedCheckbox.follow(this, 336, 122);
-		animLabelCheckbox?.follow(this, 336, 98);
 
 		indicesTextBox.follow(this, 158, 164);
 
@@ -235,12 +231,18 @@ class CharacterAnimButton extends UIButton {
 		}
 
 		var oldName:String = anim;
-		
-		var flxAnimation:FlxAnimation = __getFlxAnimation();
-		flxAnimation.name = newName;
+		if (parent.character.animateAtlas != null) {
+			var animSymbol:FlxSymbolAnimation = __getAnimationSymbol();
 
-		parent.character.animation._animations.remove(anim);
-		parent.character.animation._animations.set(newName, flxAnimation);
+			parent.character.animateAtlas.anim.animsMap.remove(anim);
+			parent.character.animateAtlas.anim.animsMap.set(newName, animSymbol);
+		} else {
+			var flxAnimation:FlxAnimation = __getFlxAnimation();
+			flxAnimation.name = newName;
+
+			parent.character.animation._animations.remove(anim);
+			parent.character.animation._animations.set(newName, flxAnimation);
+		}
 
 		var animData:AnimData = parent.character.animDatas[anim];
 		animData.name = newName;
@@ -252,13 +254,9 @@ class CharacterAnimButton extends UIButton {
 		parent.character.animOffsets.remove(anim);
 		parent.character.animOffsets.set(newName, animOffset);
 
-		var displayFrame:DisplayAnimFrameEntry = parent.displayAnimsFramesList[anim];
+		var displayFrame:{scale:Float, animBounds:Rectangle, frame:Int} = parent.displayAnimsFramesList[anim];
 		parent.displayAnimsFramesList.remove(anim);
 		parent.displayAnimsFramesList.set(newName, displayFrame);
-
-		var animButton = parent.animButtons.get(this.anim);
-		parent.animButtons.remove(this.anim);
-		parent.animButtons.set(newName, animButton);
 
 		this.anim = newName;
 		nameTextBox.label.text = newName;
@@ -274,19 +272,22 @@ class CharacterAnimButton extends UIButton {
 		var oldAnim:String = animData.anim;
 		animData.anim = newAnim;
 
-		var flxAnimation:FlxAnimation = __getFlxAnimation();
-		flxAnimation.prefix = newAnim;
+		if (parent.character.animateAtlas != null) 
+			__refreshAnimation();
+		else {
+			var flxAnimation:FlxAnimation = __getFlxAnimation();
+			flxAnimation.prefix = newAnim;
 
-		refreshAnimation(__getFlxAnimation(), data);
+			refreshFlxAnimationFrames(flxAnimation, animData);
 
-		if (valid) {
-			parent.buildAnimDisplay(anim, data);
-			animationDisplayBG.alpha = 1;
-		} else {
-			parent.removeAnimDisplay(anim);
-			animationDisplayBG.alpha = 0.4;
+			if (valid) {
+				parent.buildAnimDisplay(anim, data);
+				animationDisplayBG.alpha = 1;
+			} else {
+				parent.removeAnimDisplay(anim);
+				animationDisplayBG.alpha = 0.4;
+			}
 		}
-
 
 		if (parent.character.getAnimName() == anim)
 			CharacterEditor.instance.playAnimation(anim);
@@ -325,8 +326,13 @@ class CharacterAnimButton extends UIButton {
 		var oldFPS:Float = animData.fps;
 		animData.fps = newFPS;
 
-		var flxAnimation:FlxAnimation = __getFlxAnimation();
-		flxAnimation.frameRate = newFPS;
+		if (parent.character.animateAtlas != null) {
+			var animSymbol:FlxSymbolAnimation = __getAnimationSymbol();
+			animSymbol.frameRate = newFPS;
+		} else {
+			var flxAnimation:FlxAnimation = __getFlxAnimation();
+			flxAnimation.frameRate = newFPS;
+		}
 
 		if (parent.character.getAnimName() == anim)
 			CharacterEditor.instance.playAnimation(anim);
@@ -341,8 +347,13 @@ class CharacterAnimButton extends UIButton {
 
 		animData.loop = newLooping;
 
-		var flxAnimation:FlxAnimation = __getFlxAnimation();
-		flxAnimation.looped = animData.loop;
+		if (parent.character.animateAtlas != null) {
+			var animSymbol:FlxSymbolAnimation = __getAnimationSymbol();
+			animSymbol.instance.symbol.loop = animData.loop ? Loop : PlayOnce;
+		} else {
+			var flxAnimation:FlxAnimation = __getFlxAnimation();
+			flxAnimation.looped = animData.loop;
+		}
 
 		if (parent.character.getAnimName() == anim)
 			CharacterEditor.instance.playAnimation(anim);
@@ -350,19 +361,6 @@ class CharacterAnimButton extends UIButton {
 		loopedCheckbox.checked = newLooping;
 
 		if (addToUndo) CharacterEditor.undos.addToUndo(CAnimEditLooping(ID, newLooping));
-	}
-
-	public function changeLabel(newLabel:Bool, addToUndo:Bool = true) @:privateAccess {
-		var animData:AnimData = parent.character.animDatas[anim];
-
-		animData.label = newLabel;
-
-		if (animLabelCheckbox != null)
-			animLabelCheckbox.checked = newLabel;
-
-		__refreshAnimation();
-
-		if (addToUndo) CharacterEditor.undos.addToUndo(CAnimEditLabel(ID, newLabel));
 	}
 
 	public function changeIndicies(indicies:Array<Int>, addToUndo:Bool = true) @:privateAccess {
@@ -401,14 +399,58 @@ class CharacterAnimButton extends UIButton {
 			CharacterEditor.undos.addToUndo(CAnimEditIndices(ID, oldIndices, indicies));
 	}
 
+
+	public inline function refreshFlxAnimationFrames(flxAnimation:FlxAnimation, animData:AnimData) @:privateAccess {
+		try {
+			if (animData.indices.length > 0) {
+				var frameIndices:Array<Int> = new Array<Int>();
+				parent.character.animation.byIndicesHelper(frameIndices, flxAnimation.prefix, animData.indices, "");
+
+				flxAnimation.frames = frameIndices;
+			} else {
+				final animFrames:Array<FlxFrame> = new Array<FlxFrame>();
+				parent.character.animation.findByPrefix(animFrames, flxAnimation.prefix);
+
+				final frameIndices:Array<Int> = [];
+				parent.character.animation.byPrefixHelper(frameIndices, animFrames, flxAnimation.prefix);
+
+				flxAnimation.frames = frameIndices;
+			}
+
+			if (flxAnimation.frames.length <= 0) invalidate();
+			else validate();
+		} catch (e) {
+			trace('ERROR REFRESHING FLXANIMATION FRAMES: $e');
+			invalidate();
+		}
+	}
+
+	public inline function refreshSymbolKeyFrames(symbol:FlxSymbolAnimation, animData:AnimData) @:privateAccess {
+		var wasRefreshed:Bool = false;
+
+		try {
+			parent.character.animateAtlas.anim.animsMap.remove(animData.name);
+			if (animData.indices.length > 0)
+				parent.character.animateAtlas.anim.addBySymbolIndices(animData.name, animData.anim, animData.indices, animData.fps, animData.loop);
+			else 
+				parent.character.animateAtlas.anim.addBySymbol(animData.name, animData.anim, animData.fps, animData.loop);
+			wasRefreshed = parent.character.animateAtlas.anim.animsMap.exists(animData.name);
+			if (!wasRefreshed) __getAnimationSymbol();
+		} catch (e) {
+			trace('ERROR REFRESHING SYMBOL FRAMES: $e');
+		}
+
+		validate(wasRefreshed);
+	}
+
 	public function toggleGhost() {
 		if (valid && parent.ghosts.indexOf(anim) == -1) {
-			UIState.playEditorSound(Flags.DEFAULT_CHARACTER_GHOSTENABLE_SOUND); 
+			FlxG.sound.play(Paths.sound(Flags.DEFAULT_CHARACTER_GHOSTENABLE_SOUND)); 
 			parent.ghosts.push(anim);
 			ghostIcon.animation.play("alive", true);
 			ghostIcon.color = 0xFFFFFFFF;
 		} else {
-			UIState.playEditorSound(Flags.DEFAULT_CHARACTER_GHOSTDISABLE_SOUND);
+			FlxG.sound.play(Paths.sound(Flags.DEFAULT_CHARACTER_GHOSTDISABLE_SOUND));
 			parent.ghosts.remove(anim);
 			ghostIcon.animation.play("dead", true);
 			ghostIcon.color = 0xFFADADAD;
@@ -420,8 +462,8 @@ class CharacterAnimButton extends UIButton {
 		super.draw();
 
 		if (!closed && parent.displayAnimsFramesList.exists(anim)) {
-			var displayData:DisplayAnimFrameEntry = parent.displayAnimsFramesList.get(anim);
-			parent.displayWindowSprite.frame = displayData.frame;
+			var displayData:{frame:Int, scale:Float, animBounds:Rectangle} = parent.displayAnimsFramesList.get(anim);
+			parent.displayWindowSprite.frame = parent.displayWindowSprite.frames.frames[displayData.frame];
 
 			parent.displayWindowSprite.scale.x = parent.displayWindowSprite.scale.y = displayData.scale;
 			parent.displayWindowSprite.updateHitbox();
@@ -475,26 +517,16 @@ class CharacterAnimButton extends UIButton {
 		return parent.character.animation._animations[anim];
 	}
 
-	public inline function refreshAnimation(anim:FlxAnimation, animData:AnimData) @:privateAccess {
-		var refreshed:Bool = false;
-
-		parent.character.animation.remove(animData.name);
-		parent.character.animation._curAnim = null;
-
-		XMLUtil.addAnimToSprite(parent.character, animData);
-
-		var anim = parent.character.animation.getByName(animData.name);
-		
-		if (anim != null && anim.frames.length > 0) {
-			validate();
-			parent.character.animation.play(animData.name);
-		}
-		else
-			invalidate();
+	public inline function __getAnimationSymbol():Null<FlxSymbolAnimation> @:privateAccess {
+		if (!parent.character.animateAtlas.anim.animsMap.exists(anim))
+			XMLUtil.addAnimToSprite(parent.character, data);
+		return parent.character.animateAtlas.anim.animsMap[anim];
 	}
 
+
 	@:noCompletion function __refreshAnimation() @:privateAccess {
-		refreshAnimation(__getFlxAnimation(), data);
+		if (parent.character.animateAtlas != null) refreshSymbolKeyFrames(__getAnimationSymbol(), data);
+		else refreshFlxAnimationFrames(__getFlxAnimation(), data);
 
 		if (valid) {
 			parent.buildAnimDisplay(anim, data);

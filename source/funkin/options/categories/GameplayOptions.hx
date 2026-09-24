@@ -4,13 +4,14 @@ import flixel.util.FlxTimer;
 import funkin.backend.system.Conductor;
 
 class GameplayOptions extends TreeMenuScreen {
-	var __metronome = FlxG.sound.load(Paths.sound(Flags.DEFAULT_CHARTER_METRONOME_SOUND));
+	var __metronome = FlxG.sound.load(Paths.sound('editors/charter/metronome'));
 	var offsetSetting:NumOption;
 
 	public function new() {
-		super('optionsTree.gameplay-name', 'optionsTree.gameplay-desc', 'GameplayOptions.', ['FULL', 'A_B']);
+		super('optionsTree.gameplay-name', 'optionsTree.gameplay-desc', 'GameplayOptions.', ['LEFT_FULL', 'A_B']);
 
 		add(new Checkbox(getNameID('downscroll'), getDescID('downscroll'), 'downscroll'));
+		add(new Checkbox(getNameID('middleScroll'), getDescID('middleScroll'), 'middleScroll'));
 		add(new Checkbox(getNameID('ghostTapping'), getDescID('ghostTapping'), 'ghostTapping'));
 		add(new Checkbox(getNameID('naughtyness'), getDescID('naughtyness'), 'naughtyness'));
 		add(new Checkbox(getNameID('camZoomOnBeat'), getDescID('camZoomOnBeat'), 'camZoomOnBeat'));
@@ -65,16 +66,9 @@ class GameplayOptions extends TreeMenuScreen {
 
 class AdvancedGameplayOptions extends TreeMenuScreen {
 	public function new() {
-		super('optionsMenu.advanced', 'optionsTree.gameplay.advanced-desc', 'GameplayOptions.Advanced.', ['UP_DOWN', 'A_B']);
+		super('optionsMenu.advanced', 'optionsTree.gameplay.advanced-desc', 'GameplayOptions.Advanced.');
 
-		// Remove locked whenever this PR from FunkinCrew is merged.
-		// https://github.com/FunkinCrew/lime/pull/57
-		for (checkbox in [
-			new Checkbox(getNameID('streamedMusic'), getDescID('streamedMusic'), 'streamedMusic'),
-			new Checkbox(getNameID('streamedVocals'), getDescID('streamedVocals'), 'streamedVocals')
-		]) {
-			checkbox.locked = true;
-			add(checkbox);
-		}
+		add(new Checkbox(getNameID('streamedMusic'), getDescID('streamedMusic'), 'streamedMusic'));
+		add(new Checkbox(getNameID('streamedVocals'), getDescID('streamedVocals'), 'streamedVocals'));
 	}
 }

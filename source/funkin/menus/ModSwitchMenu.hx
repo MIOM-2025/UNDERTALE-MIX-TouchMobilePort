@@ -34,7 +34,7 @@ class ModSwitchMenu extends MusicBeatSubstate {
 
 		alphabets = new FlxTypedGroup<Alphabet>();
 		for(mod in mods) {
-			var a = new Alphabet(0, 0, mod == null ? TU.translate("mods.disableMods") : Path.withoutExtension(mod), "bold");
+			var a = new Alphabet(0, 0, mod == null ? TU.translate("mods.disableMods") : mod, "bold");
 			if(mod == ModsFolder.currentModFolder)
 				a.color = FlxColor.LIME;
 			a.isMenuItem = true;
@@ -43,12 +43,9 @@ class ModSwitchMenu extends MusicBeatSubstate {
 		}
 		add(alphabets);
 		changeSelection(0, true);
-
-		controls.isInSubstate = true;
-		addDPad("UP_DOWN");
-		addButton("A_B");
-		addDPadCamera();
-		addButtonCamera();
+		
+		addTouchPad('UP_DOWN', 'A_B');
+		addTouchPadCamera();
 	}
 
 	public override function update(elapsed:Float) {

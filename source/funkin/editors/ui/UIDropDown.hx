@@ -87,7 +87,7 @@ class UIDropDown extends UISliceSprite {
 	}
 
 	public function openContextMenu() {
-		UIState.playEditorSound(Flags.DEFAULT_EDITOR_DROPDOWNAPPEAR_SOUND);
+		FlxG.sound.play(Paths.sound(Flags.DEFAULT_EDITOR_DROPDOWNAPPEAR_SOUND));
 		var screenPos = getScreenPosition(null, __lastDrawCameras[0] == null ? FlxG.camera : __lastDrawCameras[0]);
 		curMenu = UIState.state.openContextMenu([
 			for(k=>o in items) {

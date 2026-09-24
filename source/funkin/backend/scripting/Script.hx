@@ -28,11 +28,6 @@ class Script extends FlxBasic implements IFlxDestroyable {
 			"Reflect"			=> Reflect,
 			"StringTools"		=> StringTools,
 			"Json"				=> haxe.Json,
-			"Xml"				=> Xml,
-			"Type"				=> Type,
-			"Date"				=> Date,
-			"Lambda"			=> Lambda,
-			#if sys "Sys"		=> Sys, #end
 
 			// OpenFL & Lime related stuff
 			"Assets"			=> openfl.utils.Assets,
@@ -91,10 +86,9 @@ class Script extends FlxBasic implements IFlxDestroyable {
 			"FunkinShader"		=> funkin.backend.shaders.FunkinShader,
 			"CustomShader"		=> funkin.backend.shaders.CustomShader,
 			"FunkinText"		=> funkin.backend.FunkinText,
-			"FlxAnimate"		=> animate.FlxAnimate,
+			"FlxAnimate"		=> funkin.backend.FlxAnimate,
 			"FunkinSprite"		=> funkin.backend.FunkinSprite,
 			"Alphabet"			=> funkin.menus.ui.Alphabet,
-			"Flags"				=> funkin.backend.system.Flags,
 
 			"CoolUtil"			=> funkin.backend.utils.CoolUtil,
 			"IniUtil"			=> funkin.backend.utils.IniUtil,
@@ -102,7 +96,6 @@ class Script extends FlxBasic implements IFlxDestroyable {
 			#if sys "ZipUtil"	=> funkin.backend.utils.ZipUtil, #end
 			"MarkdownUtil"		=> funkin.backend.utils.MarkdownUtil,
 			"EngineUtil"		=> funkin.backend.utils.EngineUtil,
-			"ThreadUtil"		=> funkin.backend.utils.ThreadUtil,
 			"MemoryUtil"		=> funkin.backend.utils.MemoryUtil,
 			"BitmapUtil"		=> funkin.backend.utils.BitmapUtil,
 

@@ -2,14 +2,9 @@ package commands;
 
 import haxe.xml.Access;
 import haxe.Json;
-import sys.io.Process;
-#if sys
-import sys.FileSystem;
 import sys.io.File;
-#elseif js
-import js.html.FileSystem;
-import js.html.File;
-#end
+import sys.io.Process;
+import sys.FileSystem;
 
 class Setup {
 	private static function recursiveDelete(path:String) {
@@ -60,7 +55,7 @@ class Setup {
 			FileSystem.createDirectory('.haxelib');
 		}
 
-		var libFile = #if desktop "./building/libs.xml" #else './building/libs-mobile.xml' #end;
+		var libFile = "./libs.xml";
 		if(args.existsOption("lib")) {
 			libFile = args.getOption("lib");
 			if(libFile == null) {

@@ -11,7 +11,6 @@ final class NoteHitEvent extends CancellableEvent {
 	@:dox(hide) public var unmuteVocals:Bool = true;
 	@:dox(hide) public var enableCamZooming:Bool = true;
 	@:dox(hide) public var autoHitLastSustain:Bool = true;
-	@:dox(hide) public var clipSustain:Bool = true;
 
 	/**
 	 * Whenever a miss should be added.
@@ -34,11 +33,11 @@ final class NoteHitEvent extends CancellableEvent {
 	/**
 	 * Whenever the Rating sprites should be shown or not.
 	 */
-	public var displayRating:Null<Bool>;
+	public var displayRating:Bool;
 	/**
 	 * Whenever the Combo sprite should be shown or not (like old Week 7 patches).
 	 */
-	public var displayCombo:Null<Bool>;
+	public var displayCombo:Bool;
 	/**
 	 * Note that has been pressed
 	 */
@@ -66,11 +65,11 @@ final class NoteHitEvent extends CancellableEvent {
 	/**
 	 * Prefix of the rating sprite path. Defaults to "game/score/"
 	 */
-	public var ratingPrefix:Null<String>;
+	public var ratingPrefix:String;
 	/**
 	 * Suffix of the rating sprite path.
 	 */
-	public var ratingSuffix:Null<String>;
+	public var ratingSuffix:String;
 	/**
 	 * Direction of the press (0 = Left, 1 = Down, 2 = Up, 3 = Right)
 	 */
@@ -98,19 +97,19 @@ final class NoteHitEvent extends CancellableEvent {
 	/**
 	 * Scale of combo numbers.
 	 */
-	public var numScale:Null<Float>;
+	public var numScale:Float = 0.5;
 	/**
 	 * Whenever antialiasing should be enabled on combo number.
 	 */
-	public var numAntialiasing:Null<Bool>;
+	public var numAntialiasing:Bool = true;
 	/**
 	 * Scale of ratings.
 	 */
-	public var ratingScale:Null<Float>;
+	public var ratingScale:Float = 0.7;
 	/**
 	 * Whenever antialiasing should be enabled on ratings.
 	 */
-	public var ratingAntialiasing:Null<Bool>;
+	public var ratingAntialiasing:Bool = true;
 	/**
 	 * Whenever the animation should be forced to play (if it's null it will be forced based on the sprite's data xml, if it has one).
 	 */
@@ -144,13 +143,6 @@ final class NoteHitEvent extends CancellableEvent {
 	**/
 	public function forceDeletion() {
 		deleteNote = true;
-	}
-
-	/**
-	 * Prevents the sustain from being cut. Only works if the note is a sustain.
-	 */
-	public function preventSustainClip() {
-		clipSustain = false;
 	}
 
 	/**

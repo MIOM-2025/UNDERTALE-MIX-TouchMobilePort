@@ -89,11 +89,11 @@ class GameOverSubstate extends MusicBeatSubstate
 		Conductor.changeBPM(gameOverSongBPM);
 		cancelConductorUpdate = true;
 
+		addTouchPad('NONE', 'A_B');
+		addTouchPadCamera();
+		
 		DiscordUtil.call("onGameOver", []);
 		gameoverScript.call("postCreate");
-
-		addButton("A_B");
-		addButtonCamera();
 	}
 
 	override function update(elapsed:Float)

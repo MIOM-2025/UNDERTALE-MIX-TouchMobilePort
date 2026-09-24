@@ -251,6 +251,16 @@ class HTML5AudioSource
 
 	public function getPosition():Vector4
 	{
+		#if lime_howlerjs
+		// This should work, but it returns null (But checking the inside of the howl, the _pos is actually null... so ¯\_(ツ)_/¯)
+		/*
+			var arr = parent.buffer.__srcHowl.pos())
+			position.x = arr[0];
+			position.y = arr[1];
+			position.z = arr[2];
+		 */
+		#end
+
 		return position;
 	}
 
@@ -267,17 +277,5 @@ class HTML5AudioSource
 		#end
 
 		return position;
-	}
-
-	public function getPan():Float
-	{
-		return position.x;
-	}
-
-	public function setPan(value:Float):Float
-	{
-		position.setTo(value, 0, -Math.sqrt(1 - value * value));
-		if (parent.buffer != null && parent.buffer.__srcHowl != null && parent.buffer.__srcHowl.stereo != null) parent.buffer.__srcHowl.stereo(value, id);
-		return value;
 	}
 }

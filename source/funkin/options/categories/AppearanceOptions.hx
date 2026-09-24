@@ -2,7 +2,7 @@ package funkin.options.categories;
 
 class AppearanceOptions extends TreeMenuScreen {
 	public function new() {
-		super('optionsTree.appearance-name', 'optionsTree.appearance-desc', 'AppearanceOptions.', ['FULL', 'A_B']);
+		super('optionsTree.appearance-name', 'optionsTree.appearance-desc', 'AppearanceOptions.', ['LEFT_FULL', 'A_B']);
 
 		add(new NumOption(getNameID('framerate'), getDescID('framerate'),
 			30, 240, 1,
@@ -28,7 +28,7 @@ class AdvancedAppearanceOptions extends TreeMenuScreen {
 	var qualityOptions:Array<OptionType> = [];
 
 	public function new() {
-		super('optionsMenu.advanced', 'optionsTree.appearance.advanced-desc', 'AppearanceOptions.Advanced.', ['FULL', 'A_B']);
+		super('optionsMenu.advanced', 'optionsTree.appearance.advanced-desc', 'AppearanceOptions.Advanced.');
 
 		add(new ArrayOption(getNameID('quality'), getDescID('quality'),
 			[0, 1, 2], [getID('quality-low'), getID('quality-high'), getID('quality-custom')],
@@ -48,29 +48,12 @@ class AdvancedAppearanceOptions extends TreeMenuScreen {
 	}
 
 	private function updateQualityOptions() {
-		for (option in qualityOptions) {
-			option.locked = Options.quality != 2;
-			if (option is Checkbox) {
-				final checkbox:Checkbox = cast option;
-				checkbox.checked = Reflect.field(checkbox.parent, checkbox.optionName);
-			}
-			else if (option is SliderOption) {
-				final slider:SliderOption = cast option;
-				slider.currentValue = Reflect.field(slider.parent, slider.optionName);
-			}
-			else if (option is NumOption) {
-				final num:NumOption = cast option;
-				num.currentValue = Reflect.field(num.parent, num.optionName);
-			}
-			else if (option is ArrayOption) {
-				final array:ArrayOption = cast option;
-				array.currentSelection = Reflect.field(array.parent, array.optionName);
-			}
-		}
+		for (option in qualityOptions) option.locked = Options.quality != 2;
 	}
 
 	private function __changeQuality(value:Dynamic) {
-		Options.applyQuality();
+		var antialiasing = value == 0 ? false : (value == 1 ? true : Options.antialiasing);
+		FlxG.game.stage.quality = (FlxG.enableAntialiasing = antialiasing) ? BEST : LOW;
 		updateQualityOptions();
 	}
 

@@ -41,8 +41,7 @@ class Week {
 				weekObj.songs.push({
 					name: name,
 					hide: song.getAtt('hide').getDefault('false') == "true",
-					displayName: song.getAtt('displayName'),
-                    variation: song.getAtt('variation')
+					displayName: song.getAtt('displayName')
 				});
 			} catch(e) {
 				Logs.trace('Song at index ${k} in week $weekName cannot contain any other XML nodes in its name.', WARNING);

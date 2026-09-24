@@ -8,24 +8,15 @@ import openfl.geom.Rectangle;
 import flixel.graphics.frames.FlxFrame;
 import funkin.game.Character;
 import flixel.animation.FlxPrerotatedAnimation;
-import animate.internal.RenderTexture;
-import flixel.graphics.frames.FlxFrame;
-import funkin.backend.system.Logs;
 
 using funkin.backend.utils.BitmapUtil;
-
-typedef DisplayAnimFrameEntry = {
-	scale:Float,
-	frame:FlxFrame,
-	renderTexture:RenderTexture
-}
 
 class CharacterAnimsWindow extends UIButtonList<CharacterAnimButton> {
 	public var character:CharacterGhost;
 
 	public var displayWindowSprite:FlxSprite;
 	public var displayWindowGraphic:FlxGraphic;
-	public var displayAnimsFramesList:Map<String, DisplayAnimFrameEntry> = [];
+	public var displayAnimsFramesList:Map<String, {scale:Float, animBounds:Rectangle, frame:OneOfTwo<Int, String>}> = [];
 
 	public var animButtons:Map<String, CharacterAnimButton> = [];
 	public var animsList:Array<String> = [];
@@ -39,7 +30,7 @@ class CharacterAnimsWindow extends UIButtonList<CharacterAnimButton> {
 
 		buttonCameras.pixelPerfectRender = true;
 
-		if (Assets.exists(Paths.image('characters/${character.sprite}')))
+		if (Assets.exists(Paths.image('characters/${character.sprite}')) && character.animateAtlas == null)
 			displayWindowGraphic = FlxG.bitmap.add(Assets.getBitmapData(Paths.image('characters/${character.sprite}'), true, false));
 
 		displayWindowSprite = new FlxSprite();
@@ -78,53 +69,41 @@ class CharacterAnimsWindow extends UIButtonList<CharacterAnimButton> {
 	}
 
 	public function buildAnimDisplay(name:String, anim:AnimData) @:privateAccess {
-		var anim:FlxAnimation = character.animation._animations[anim.name];
-		if (anim == null) return;
+		if (character.animateAtlas == null) {
+			var anim:FlxAnimation = character.animation._animations[anim.name];
+			if (anim == null || anim.frames.length <= 0) return;
 
-		if (character.isAnimate) {
-			var renderTex = character.generateRenderTextureForAnim(name);
-			var frame = renderTex.graphic.imageFrame.frame;
-
-			displayAnimsFramesList.set(name, {
-				frame: frame,
-				scale: 104/Math.max(frame.frame.width, frame.frame.height),
-				renderTexture: renderTex
-			});
-		} else {
 			var frameIndex:Int = anim.frames.getDefault([0])[0];
 			var frame:FlxFrame = displayWindowSprite.frames.frames[frameIndex];
-	
+
 			var frameRect:Rectangle = new Rectangle(frame.offset.x, frame.offset.y, frame.sourceSize.x, frame.sourceSize.y);
 			var animBounds:Rectangle = displayWindowGraphic != null ? displayWindowGraphic.bitmap.bounds(frameRect) : frameRect;
-	
-			displayAnimsFramesList.set(name, {
-				frame: character.frames.frames[anim.frames.getDefault([0])[0]],
-				scale: 104/Math.max(animBounds.width, animBounds.height),
-				renderTexture: null
-			});
+
+			displayAnimsFramesList.set(name, {frame: anim.frames.getDefault([0])[0], scale: 104/Math.max(animBounds.width, animBounds.height), animBounds: animBounds});
+		} else {
+			character.storeAtlasState();
+
+			/*
+			character.animateAtlas.anim.play(anim.name, true, false, 0);
+			character.animateAtlas.anim.stop();
+
+			var animBounds:Rectangle = MatrixUtil.getBounds(character).copyToFlash();
+			displayAnimsFramesList.set(name, {frame: anim.anim, scale: 104/animBounds.height, animBounds: animBounds});
+			*/
+
+			character.restoreAtlasState();
 		}
-
 	}
 
-	public function removeAnimDisplay(name:String) {
-		if (displayAnimsFramesList.exists(name))
-			displayAnimsFramesList[name].renderTexture?.destroy();
+	public function removeAnimDisplay(name:String)
 		displayAnimsFramesList.remove(name);
-	}
-
-	public function clearDisplayAnims() {
-		for(k=>e in displayAnimsFramesList)
-			e.renderTexture?.destroy();
-		displayAnimsFramesList.clear();
-	}
 
 	public function deleteAnimation(button:CharacterAnimButton, addToUndo:Bool = true) {
-		UIState.playEditorSound(Flags.DEFAULT_EDITOR_DELETE_SOUND);
+		FlxG.sound.play(Paths.sound(Flags.DEFAULT_EDITOR_DELETE_SOUND));
 		if (buttons.members.length <= 1) return;
 		if (character.getAnimName() == button.anim)
 			@:privateAccess CharacterEditor.instance._animation_down(null);
 
-		character.ghosts.remove(button.anim);
 		character.removeAnimation(button.anim);
 		if (character.animOffsets.exists(button.anim)) character.animOffsets.remove(button.anim);
 		if (character.animDatas.exists(button.anim)) character.animDatas.remove(button.anim);
@@ -154,7 +133,6 @@ class CharacterAnimsWindow extends UIButtonList<CharacterAnimButton> {
 			x: 0, y: 0,
 			indices: [],
 			animType: NONE,
-			label: false
 		};
 		addAnimation(animData);
 	}

@@ -95,20 +95,18 @@ class ScriptedCutscene extends Cutscene {
 		script.call("stepHit", [curStep]);
 	}
 
-	public override function openSubState(subState:FlxSubState)
+	public override function openSubState(sub:FlxSubState)
 	{
-		var event = EventManager.get(StateEvent).recycle(subState);
-		script.call(Flags.MOD_API_VERSION <= 1 ? "onSubstateClose" /*Remove this entirely*/ : "onOpenSubState", [event]);
-		if (!event.cancelled)
-			super.openSubState(event.substate is FlxSubState ? cast event.substate : subState);
+		var event = EventManager.get(StateEvent).recycle(sub);
+		script.call("onSubstateClose", [event]);
+		if(!event.cancelled) super.openSubState(event.substate is FlxSubState ? cast event.substate : sub);
 	}
 
 	public override function closeSubState()
 	{
 		var event = EventManager.get(StateEvent).recycle(subState);
-		script.call(Flags.MOD_API_VERSION <= 1 ? "onSubstateOpen" /*Remove this entirely*/ : "onCloseSubState", [event]);
-		if (!event.cancelled)
-			super.closeSubState();
+		script.call("onSubstateOpen", [event]);
+		if(!event.cancelled) super.closeSubState();
 	}
 
 	public override function destroy() {

@@ -36,14 +36,6 @@ class StageSelectionScreen extends EditorTreeMenuScreen {
 			stages.push(stage.toLowerCase());
 			add(makeStageOption(stage));
 		}
-
-		final state = MusicBeatState.instance;
-		if (state != null) {
-			state.addDPad("UP_DOWN");
-			state.addButton("A_B");
-			state.addDPadCamera();
-			state.addButtonCamera();
-		}
 	}
 
 	public function saveStage(creation:StageCreationData) {

@@ -10,6 +10,11 @@ import flixel.FlxBasic;
 import funkin.backend.system.Controls;
 import funkin.options.PlayerSettings;
 
+#if TOUCH_CONTROLS
+import mobile.funkin.backend.system.input.MobileInputID;
+import mobile.funkin.backend.system.input.MobileInputManager;
+#end
+
 class TurboBasic extends FlxBasic {
 	public static var DEFAULT_DELAY:Float = 0.4;
 	public static var DEFAULT_INTERVAL:Float = 1 / 18;
@@ -55,10 +60,10 @@ class TurboControls extends TurboBasic {
 
 	override function get_pressed() {
 		if (allPress) {
-			for (control in controls) if (!(controlsInstance.getActionFromControl(control).check() || controlsInstance.checkMobile(Std.string(control)))) return false;
+			for (control in controls) if (!(controlsInstance.getActionFromControl(control).check() || controlsInstance.mobileControlsPressed(controlsInstance.getMobileIDFromControl(control)))) return false;
 		}
 		else {
-			for (control in controls) if (controlsInstance.getActionFromControl(control).check() || controlsInstance.checkMobile(Std.string(control))) return true;
+			for (control in controls) if (controlsInstance.getActionFromControl(control).check() || controlsInstance.mobileControlsPressed(controlsInstance.getMobileIDFromControl(control))) return true;
 		}
 		return allPress;
 	}
@@ -121,21 +126,23 @@ class TurboButtons extends TurboBasic {
 }
 
 class TurboMobileButton extends TurboBasic {
-	public var buttons:Array<String>;
-	public function new(buttons:Array<String>, ?delay:Float, ?interval:Float, ?allPress:Bool) {
+	#if TOUCH_CONTROLS
+	public var buttons:Array<MobileInputID>;
+	public function new(buttons:Array<MobileInputID>, ?delay:Float, ?interval:Float, ?allPress:Bool) {
 		super(delay, interval, allPress);
 		this.buttons = buttons;
 	}
 
 	override function get_pressed() {
-		if (MobileControls.instance == null || MobileControls.instance != null && !MobileControls.instance.exists) return false;
+		if (MobileInputManager.instance == null || MobileInputManager.instance != null && !MobileInputManager.instance.exists) return false;
 
 		if (allPress) {
-			for (button in buttons) if (!MobileControls.instance.checkState(button, "pressed")) return false;
+			for (button in buttons) if (!MobileInputManager.instance.checkStatus(button, PRESSED)) return false;
 		}
 		else {
-			for (button in buttons) if (MobileControls.instance.checkState(button, "pressed")) return true;
+			for (button in buttons) if (MobileInputManager.instance.checkStatus(button, PRESSED)) return true;
 		}
 		return allPress;
 	}
+	#end
 }

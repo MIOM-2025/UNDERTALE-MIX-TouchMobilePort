@@ -137,6 +137,7 @@ import lime.media.openal.AL;
 
 		#if lime
 		__source.onComplete.remove(source_onComplete);
+		__source.onLoop.remove(source_onLoop);
 		__source.dispose();
 		__source = null;
 		#end
@@ -164,14 +165,14 @@ import lime.media.openal.AL;
 		#if lime_cffi
 		var backend = __source.__backend, i = 0;
 		if (backend.streamed) {
-			size = backend.bufferLengths[i = backend.bufferLengths.length - backend.requestBuffers];
+			size = backend.bufferSizes[i = backend.bufferSizes.length - backend.queuedBuffers];
 			buf = backend.bufferDatas[i].buffer;
 			pos -= Math.floor(backend.bufferTimes[i] * buffer.sampleRate * buffer.channels * wordSize);
 			while (pos > size) {
-				if (++i >= backend.bufferLengths.length) return false;
+				if (++i >= backend.bufferSizes.length) return false;
 				pos -= size;
 				buf = backend.bufferDatas[i].buffer;
-				size = backend.bufferLengths[i];
+				size = backend.bufferSizes[i];
 			}
 		}
 		else
@@ -188,10 +189,10 @@ import lime.media.openal.AL;
 			if (c % 2 == 0) ((b > leftMax) ? (leftMax = b) : (if ((b = -b) > leftMin) (leftMin = b)));
 			else ((b > rightMax) ? (rightMax = b) : (if ((b = -b) > rightMin) (rightMin = b)));
 			if ((pos += wordSize) >= size) #if lime_cffi {
-				if (!backend.streamed || ++i >= backend.bufferLengths.length) break;
+				if (!backend.streamed || ++i >= backend.bufferSizes.length) break;
 				pos = 0;
 				buf = backend.bufferDatas[i].buffer;
-				size = backend.bufferLengths[i];
+				size = backend.bufferSizes[i];
 			}
 			#else break; #end
 
@@ -221,6 +222,7 @@ import lime.media.openal.AL;
 		}
 
 		__source.onComplete.add(source_onComplete);
+		__source.onLoop.add(source_onLoop);
 		__isValid = true;
 
 		__source.play();
@@ -271,9 +273,13 @@ import lime.media.openal.AL;
 			if (__isValid)
 			{
 				#if lime
-				// TODO: implement SoundTransform.leftToRight, etc. with Native setAngles?
 				__source.gain = volume;
-				__source.pan = pan;
+
+				var position = __source.position;
+				position.x = pan;
+				position.z = -1 * Math.sqrt(1 - Math.pow(pan, 2));
+				__source.position = position;
+
 				return value;
 				#end
 			}
@@ -390,6 +396,11 @@ import lime.media.openal.AL;
 
 		__dispose();
 		dispatchEvent(new Event(Event.SOUND_COMPLETE));
+	}
+
+	@:noCompletion private function source_onLoop():Void
+	{
+		//dispatchEvent(new Event(Event.SOUND_LOOP));
 	}
 
 	@:noCompletion private function get___audioSource():AudioSource return __source;

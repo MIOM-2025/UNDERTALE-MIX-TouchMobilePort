@@ -1,28 +1,19 @@
 package funkin.backend.system.framerate;
 
 import funkin.backend.system.Logs;
+#if android
+import android.os.Build;
+import android.os.Build.VERSION;
+#end
 import funkin.backend.utils.MemoryUtil;
 import funkin.backend.utils.native.HiddenProcess;
 #if cpp
 import cpp.Float64;
 import cpp.UInt64;
 #end
-#if android
-import android.os.Build;
-import android.os.Build.VERSION;
-#end
 
 using StringTools;
 
-#if cpp
-#if windows
-@:cppFileCode('#include <windows.h>')
-#elseif (mac || ios)
-@:cppFileCode('#include <mach-o/arch.h>')
-#else
-@:headerInclude('sys/utsname.h')
-#end
-#end
 class SystemInfo extends FramerateCategory {
 	public static var osInfo:String = "Unknown";
 	public static var gpuName:String = "Unknown";
@@ -130,7 +121,8 @@ class SystemInfo extends FramerateCategory {
 					if (vRAMBytes == 1000 || vRAMBytes == 1 || vRAMBytes <= 0)
 						Logs.trace('Unable to grab GPU VRAM', ERROR, RED);
 					else {
-						vRAM = getSizeString(vRAMBytes / 1024);
+						var vRAMBytesFloat:#if cpp Float64 #else Float #end = vRAMBytes*1024;
+						vRAM = CoolUtil.getSizeString64(vRAMBytesFloat);
 					}
 				}
 			} else
@@ -154,7 +146,7 @@ class SystemInfo extends FramerateCategory {
 	static function formatSysInfo() {
 		__formattedSysText = #if android 'Device: ${Build.BRAND.charAt(0).toUpperCase() + Build.BRAND.substring(1)} ${Build.MODEL} (${Build.BOARD})\n' #else "" #end;
 		if (osInfo != "Unknown") __formattedSysText += 'System: $osInfo';
-		if (cpuName != "Unknown") __formattedSysText += '\nCPU: $cpuName ${getCPUArch()}';
+		if (cpuName != "Unknown") __formattedSysText += '\nCPU: $cpuName ${openfl.system.Capabilities.cpuArchitecture} ${(openfl.system.Capabilities.supports64BitProcesses ? '64-Bit' : '32-Bit')}';
 		if (gpuName != cpuName || vRAM != "Unknown") {
 			var gpuNameKnown = gpuName != "Unknown" && gpuName != cpuName;
 			var vramKnown = vRAM != "Unknown";
@@ -169,17 +161,6 @@ class SystemInfo extends FramerateCategory {
 		if (totalMem != "Unknown" && memType != "Unknown") __formattedSysText += '\nTotal MEM: $totalMem $memType';
 	}
 
-	static function getSizeString(size:Float):String {
-		if (size < 1024)
-			return Std.int(size) + " MB";
-		else if (size < 1024 * 1024)
-			return Std.int(size / 1024) + " GB";
-		else {
-			var tb = size / (1024 * 1024);
-			return Std.int(tb) + "." + CoolUtil.addZeros(Std.string(Std.int((tb % 1) * 100)), 2) + " TB";
-		}
-	}
-
 	public function new() {
 		super("System Info");
 	}
@@ -192,45 +173,5 @@ class SystemInfo extends FramerateCategory {
 
 		this.text.text = _text;
 		super.__enterFrame(t);
-	}
-
-	#if windows
-	@:functionCode('
-		SYSTEM_INFO osInfo;
-
-		GetSystemInfo(&osInfo);
-
-		switch(osInfo.wProcessorArchitecture)
-		{
-			case 9:
-				return ::String("x86_64");
-			case 5:
-				return ::String("ARM");
-			case 12:
-				return ::String("ARM64");
-			case 6:
-				return ::String("IA-64");
-			case 0:
-				return ::String("x86");
-			default:
-				return ::String("Unknown");
-		}
-	')
-	#elseif (mac || ios)
-	@:functionCode('
-		const NXArchInfo *archInfo = NXGetLocalArchInfo();
-		return ::String(archInfo == NULL ? "Unknown" : archInfo->name);
-	')
-	#elseif cpp
-	@:functionCode('
-		struct utsname osInfo{};
-		uname(&osInfo);
-		return ::String(osInfo.machine);
-	')
-	#end
-	@:noCompletion
-	private static function getCPUArch():String
-	{
-		return "Unknown";
 	}
 }

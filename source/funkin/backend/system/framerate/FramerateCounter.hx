@@ -9,13 +9,6 @@ class FramerateCounter extends Sprite {
 	public var fpsLabel:TextField;
 	public var lastFPS:Float = 0;
 
-	private var frameCount:Int = 0;
-
-	private var accumulatedTime:Float = openfl.Lib.getTimer();
-
-	private final updateInterval:Float = 1 / 15;
-	private var lastUpdateTime:Float = 0;
-
 	public function new() {
 		super();
 
@@ -28,45 +21,26 @@ class FramerateCounter extends Sprite {
 			label.y = 0;
 			label.text = "FPS";
 			label.multiline = label.wordWrap = false;
-			label.defaultTextFormat = new TextFormat(Framerate.fontName, label == fpsNum ? 18 : 12, -1);
+			label.defaultTextFormat = new TextFormat(openfl.utils.Assets.getFont("assets/fonts/DTM-Mono.ttf").fontName, label == fpsNum ? 18 : 12, -1);
 			label.selectable = false;
 			addChild(label);
 		}
+
+		this.fpsNum.antiAliasType = ADVANCED;
+        this.fpsNum.sharpness = 400/*MAX ON OPENFL*/;
+
+		this.fpsLabel.antiAliasType = ADVANCED;
+        this.fpsLabel.sharpness = 400/*MAX ON OPENFL*/;
 	}
 
-	public function reload() {
-		lastUpdateTime = 0;
-	}
+	public function reload() {}
 
 	public override function __enterFrame(t:Int) {
 		if (alpha <= 0.05) return;
-
 		super.__enterFrame(t);
 
-		frameCount++;
-
-		if ((lastUpdateTime += FlxG.rawElapsed) < updateInterval)
-		{
-			updateLabelPosition();
-			return;
-		}
-
-		final timer = openfl.Lib.getTimer();
-
-		final time = timer - accumulatedTime;
-
-		accumulatedTime = timer;
-
-		lastFPS = FlxMath.lerp(lastFPS, time <= 0 ? 0 : (1000 / time * frameCount), 1.0 - Math.pow(0.75, time * 0.06));
-
-		fpsNum.text = Std.string(Math.round(lastFPS));
-		lastUpdateTime = frameCount = 0;
-
-		updateLabelPosition();
-	}
-
-	private inline function updateLabelPosition():Void
-	{
+		lastFPS = CoolUtil.fpsLerp(lastFPS, FlxG.rawElapsed == 0 ? 0 : (1 / FlxG.rawElapsed), 0.25);
+		fpsNum.text = Std.string(Math.floor(lastFPS));
 		fpsLabel.x = fpsNum.x + fpsNum.width;
 		fpsLabel.y = (fpsNum.y + fpsNum.height) - fpsLabel.height;
 	}

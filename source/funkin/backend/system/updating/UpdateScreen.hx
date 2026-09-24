@@ -124,7 +124,7 @@ class UpdateScreen extends MusicBeatState {
 					#elseif !mobile
 					// We have to make the new executable allowed to execute
 					// before we can execute it!
-					Sys.command('chmod +x ${AsyncUpdater.executableName} && ${AsyncUpdater.executableName}');
+					Sys.command('chmod +x ./${AsyncUpdater.executableName} && ./${AsyncUpdater.executableName}');
 					#end
 					openfl.system.System.exit(0);
 				} else {

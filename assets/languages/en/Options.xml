@@ -26,9 +26,9 @@
 
 		<str id="optionsTree.debug-name">Debug Options</str>
 		<str id="optionsTree.debug-desc">Debug Options for Developer Mode.</str>
-
+		
 		<str id="optionsTree.mobile-name">Mobile Options</str>
-		<str id="optionsTree.mobile-desc">Change Options related to Mobile Controls.</str>
+		<str id="optionsTree.mobile-desc">Change Options related to Mobile or Touch Controls.</str>
 	</group>
 
 	<group name="KeybindOptions" prefix="KeybindsOptions.">
@@ -51,7 +51,6 @@
 		<str id="category.engine">Engine</str>
 		<group name="engine" prefix="engine.">
 			<str id="switchMod">Switch Mod</str>
-			<str id="fpsCounter">FPS Counter</str>
 		</group>
 
 		<str id="category.volume">Volume</str>
@@ -100,36 +99,36 @@
 			<str id="gpuOnlyBitmaps-desc">If checked, will only store the bitmaps in the GPU, freeing a LOT of memory (EXPERIMENTAL). Turning this off will consume a lot of memory, especially on bigger sprites. If you aren't sure, leave this on.</str>
 		</group>
 	</group>
-
+	
 	<group name="MobileOptions" prefix="MobileOptions.">
-		<str id="extraButtons-name">Extra Buttons</str>
-		<str id="extraButtons-desc">Select how many extra buttons you prefer to have on hitbox.</str>
+		<str id="extraHints-name">Extra Hints</str>
+		<str id="extraHints-desc">Select how many extra hints you prefer to have on hitbox.</str>
 
 		<str id="hitboxAlpha-name">Hitbox Opacity</str>
 		<str id="hitboxAlpha-desc">Change how opaque the Hitbox should be</str>
 
-		<str id="controlsAlpha-name">Control Opacity</str>
-		<str id="controlsAlpha-desc">Change how opaque the Mobile Controls should be</str>
+		<str id="oldPadTexture-name">Use Old Pad Texture</str>
+		<str id="oldPadTexture-desc">If checked, the TouchPad will use the old texture it used before</str>
+
+		<str id="touchPadAlpha-name">TouchPad Opacity</str>
+		<str id="touchPadAlpha-desc">Change how opaque the TouchPad should be</str>
 
 		<str id="hitboxType-name">Hitbox Design</str>
 		<str id="hitboxType-desc">Choose how your Hitbox should look like!</str>
 
-		<str id="hitboxMode-name">Hitbox Mode</str>
-		<str id="hitboxMode-desc">Choose your Hitbox Style! (Cannot be added custom ones for now)</str>
-
 		<str id="hitboxPos-name">Hitbox Position</str>
-		<str id="hitboxPos-desc">If checked, the Hitbox will be put at the top of the screen, otherwise will stay at the bottom.</str>
+		<str id="hitboxPos-desc">If checked, the Hitbox will be put at the bottom of the screen, otherwise will stay at the top.</str>
 
-		<str id="storageType-name">Folder</str>
-		<str id="storageType-desc">Which folder Codename Engine Mods should stored?\nCan be added custom folders, check android/data for that</str>
-
-		<str id="storageTypeChange-title">Warning: Storage Type Has Been Changed!</str>
-		<str id="storageTypeChange-body">The Storage Type has been changed.\nA restart is required for this change to take effect.\nAny previously installed mods will have to be moved manually to the new Storage Types's directory after this restart.\n\nPress OK to reset the game and apply the changes.</str>
+		<str id="screenTimeOut-name">Allow Screen Timeout</str>
+		<str id="screenTimeOut-desc">If checked, The phone will enter sleep mode if the player is inactive.</str>
 	</group>
 
 	<group name="GameplayOptions" prefix="GameplayOptions.">
 		<str id="downscroll-name">Downscroll</str>
 		<str id="downscroll-desc">If checked, notes will go from up to down instead of down to up, as if they're falling.</str>
+		
+		<str id="middleScroll-name">MiddleScroll</str>
+		<str id="middleScroll-desc">If checked, your notes will be centered, hiding the opponent's notes.</str>
 
 		<str id="ghostTapping-name">Ghost Tapping</str>
 		<str id="ghostTapping-desc">If unchecked, trying to hit any strum that have no note that can be hit will cause a miss.</str>
@@ -186,7 +185,7 @@
 		<str id="allowConfigWarning-name">Show Modpacks Warning</str>
 		<str id="allowConfigWarning-desc">If checked, a popup at the start of the game will appear if there are some warnings about the modpack, such as missing configs, incompatible versions and more</str>
 
-		<str id="resetSaveData-name">Reset Save Data</str>
+		<str id="resetSaveData-name">True Reset</str>
 		<str id="resetSaveData-desc">Select this option to reset save data. This will remove all of your highscores.</str>
 	</group>
 

@@ -53,11 +53,14 @@ class NoteGroup extends FlxTypedGroup<Note> {
 	public override function update(elapsed:Float) {
 		i = length-1;
 		__loopSprite = null;
-		__time = __getSongPos() + limit;
+		__time = __getSongPos();
 		while(i >= 0) {
 			__loopSprite = members[i--];
-			if (__loopSprite == null || !__loopSprite.exists || !__loopSprite.active) continue;
-			if (__loopSprite.strumTime > __time) break;
+			if (__loopSprite == null || !__loopSprite.exists || !__loopSprite.active) {
+				continue;
+			}
+			if (__loopSprite.strumTime - __time > limit)
+				break;
 			__loopSprite.update(elapsed);
 		}
 	}
@@ -71,11 +74,12 @@ class NoteGroup extends FlxTypedGroup<Note> {
 
 		i = length-1;
 		__loopSprite = null;
-		__time = __getSongPos() + limit;
+		__time = __getSongPos();
 		while(i >= 0) {
 			__loopSprite = members[i--];
-			if (__loopSprite == null || !__loopSprite.exists || !__loopSprite.visible) continue;
-			if (__loopSprite.strumTime > __time) break;
+			if (__loopSprite == null || !__loopSprite.exists || !__loopSprite.visible)
+				continue;
+			if (__loopSprite.strumTime - __time > limit) break;
 			__loopSprite.draw();
 		}
 		__currentlyLooping = oldCur;
@@ -93,15 +97,16 @@ class NoteGroup extends FlxTypedGroup<Note> {
 	public override function forEach(noteFunc:Note->Void, recursive:Bool = false) {
 		i = length-1;
 		__loopSprite = null;
-		__time = __getSongPos() + limit;
+		__time = __getSongPos();
 
 		var oldCur = __currentlyLooping;
 		__currentlyLooping = true;
 
 		while(i >= 0) {
 			__loopSprite = members[i--];
-			if (__loopSprite == null || !__loopSprite.exists) continue;
-			if (__loopSprite.strumTime > __time) break;
+			if (__loopSprite == null || !__loopSprite.exists)
+				continue;
+			if (__loopSprite.strumTime - __time > limit) break;
 			noteFunc(__loopSprite);
 		}
 		__currentlyLooping = oldCur;

@@ -75,24 +75,20 @@ class MainMenuState extends MusicBeatState
 		}
 
 		FlxG.camera.follow(camFollow, null, 0.06);
-		var modsKey:String = controls.mobileC ? "M" : controls.getKeyName(SWITCHMOD);
 
 		versionText = new FunkinText(5, FlxG.height - 2, 0, [
 			Flags.VERSION_MESSAGE,
 			TU.translate("mainMenu.commit", [Flags.COMMIT_NUMBER, Flags.COMMIT_HASH]),
-			TU.translate("mainMenu.openMods", [modsKey]),
+			TU.translate("mainMenu.openMods", [controls.getKeyName(SWITCHMOD)]),
 			''
 		].join('\n'));
 		versionText.y -= versionText.height;
 		versionText.scrollFactor.set();
 		add(versionText);
 
+		addTouchPad('UP_DOWN', 'A_B_M_E');
+		
 		changeItem();
-
-		addDPad("UP_DOWN");
-		addButton("A_B_M_E");
-		addDPadCamera();
-		addButtonCamera();
 
 		devModeWarning = new FunkinText(0, FlxG.height - 50, 1280, "You have to enable DEVELOPER MODE in the miscellaneous settings!", 24);
 		devModeWarning.alignment = CENTER;
@@ -113,7 +109,7 @@ class MainMenuState extends MusicBeatState
 		if (!selectedSomethin)
 		{
 			if (canAccessDebugMenus) {
-				if (controls.DEV_ACCESS) {
+				if (controls.DEV_ACCESS #if TOUCH_CONTROLS || touchPad.buttonE.justPressed #end) {
 					persistentUpdate = false;
 					persistentDraw = true;
 					openSubState(new funkin.editors.EditorPicker());
@@ -126,7 +122,7 @@ class MainMenuState extends MusicBeatState
 				}
 				*/
 			}
-			if (!Options.devMode && (FlxG.keys.justPressed.SEVEN || mobileCJustPressed("DEV_ACCESS"))) {
+			if (!Options.devMode && FlxG.keys.justPressed.SEVEN) {
 				FlxG.sound.play(Paths.sound(Flags.DEFAULT_EDITOR_DELETE_SOUND));
 				if (devModeCount++ == 2) {
 					FlxTween.tween(devModeWarning, {alpha: 1}, 0.4);
@@ -149,7 +145,7 @@ class MainMenuState extends MusicBeatState
 				FlxG.switchState(new TitleState());
 
 			#if MOD_SUPPORT
-			if (controls.SWITCHMOD) {
+			if (controls.SWITCHMOD #if TOUCH_CONTROLS || touchPad.buttonM.justPressed #end) {
 				openSubState(new ModSwitchMenu());
 				persistentUpdate = false;
 				persistentDraw = true;
@@ -176,16 +172,6 @@ class MainMenuState extends MusicBeatState
 			});
 		}
 		return super.switchTo(nextState);
-	}
-
-	override function closeSubState() {
-		super.closeSubState();
-		removeDPad();
-		removeButton();
-		addDPad("UP_DOWN");
-		addButton("A_B_M_E");
-		addDPadCamera();
-		addButtonCamera();
 	}
 
 	function selectItem() {

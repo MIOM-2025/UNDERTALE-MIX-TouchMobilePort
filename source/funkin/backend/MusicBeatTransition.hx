@@ -114,8 +114,12 @@ class MusicBeatTransition extends MusicBeatSubstate {
 		}
 
 		if (transitionSprite != null) {
-			transitionSprite.setGraphicSize(transitionCamera.width, transitionCamera.height);
-			transitionSprite.updateHitbox();
+			if (transitionSprite.animateAtlas == null) {
+				transitionSprite.setGraphicSize(transitionCamera.width, transitionCamera.height);
+				transitionSprite.updateHitbox();
+			} else {
+				transitionSprite.screenCenter();
+			}
 		}
 	}
 

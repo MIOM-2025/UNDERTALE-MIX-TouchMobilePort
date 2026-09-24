@@ -1,5 +1,4 @@
 package funkin.editors.ui;
-import funkin.backend.system.Controls;
 
 class UIButton extends UISliceSprite {
 	public var callback:Void->Void = null;
@@ -29,30 +28,19 @@ class UIButton extends UISliceSprite {
 
 	public override function onHovered() {
 		super.onHovered();
-		var justPressed = FlxG.mouse.justPressed;
-		var justReleased = FlxG.mouse.justReleased;
-		if (Controls.instance.mobileC) {
-			justPressed = ScreenUtil.touch.justPressed;
-			justReleased = ScreenUtil.touch.justReleased;
-		}
-
-		if (justPressed) {
+		if (FlxG.mouse.justPressed) {
 			hasBeenPressed = true;
-			UIState.playEditorSound(Flags.DEFAULT_EDITOR_BUTTONCLICK_SOUND);
+			FlxG.sound.play(Paths.sound(Flags.DEFAULT_EDITOR_BUTTONCLICK_SOUND));
 		}
-		if (justReleased && callback != null && shouldPress && hasBeenPressed) {
+		if (FlxG.mouse.justReleased && callback != null && shouldPress && hasBeenPressed) {
 			callback();
 			hasBeenPressed = false;
 		}
 	}
 
 	public override function update(elapsed:Float) {
-		var justReleased = FlxG.mouse.justReleased;
-		if (Controls.instance.mobileC)
-			justReleased = ScreenUtil.touch.justReleased;
-
 		if (autoFollow && field != null) field.follow(this, 0, (bHeight - field.height) / 2);
-		if (!hovered && hasBeenPressed && justReleased) hasBeenPressed = false;
+		if (!hovered && hasBeenPressed && FlxG.mouse.justReleased) hasBeenPressed = false;
 		if (autoAlpha) {
 			alpha = selectable ? 1 : 0.4;
 			if(field != null) field.alpha = alpha;

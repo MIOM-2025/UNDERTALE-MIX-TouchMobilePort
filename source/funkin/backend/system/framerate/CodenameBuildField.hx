@@ -10,16 +10,14 @@ class CodenameBuildField extends TextField {
 		autoSize = LEFT;
 		multiline = wordWrap = false;
 		reload();
+
+		this.antiAliasType = ADVANCED;
+        this.sharpness = 400/*MAX ON OPENFL*/;
 	}
 
 	public function reload() {
-		#if COMPILE_EXPERIMENTAL
-		text = '${Flags.VERSION_MESSAGE} (Experimental Build)';
-		#else
 		text = '${Flags.VERSION_MESSAGE}';
-		#end
-
-		#if (debug || COMPILE_EXPERIMENTAL)
+		#if debug
 		text += '\n${Flags.COMMIT_MESSAGE}';
 		#end
 	}

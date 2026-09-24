@@ -1,7 +1,6 @@
 package funkin.game;
 
 import flixel.math.FlxPoint;
-import flixel.math.FlxAngle;
 import flixel.math.FlxRect;
 import funkin.backend.chart.ChartData;
 import funkin.backend.scripting.events.note.NoteCreationEvent;
@@ -62,15 +61,6 @@ class Note extends FlxSprite
 	public var sustainParent:Null<Note>;
 
 	/**
-	 * Number of active sustain pieces attached to this note
-	 * 
-	 * Increases by 1 every time a hold piece is initialized.
-	 * 
-	 * Decreases by 1 every time a hold piece gets destroyed.
-	 */
-	public var tailCount:Int = 0;
-
-	/**
 	 * Name of the splash.
 	 */
 	public var splash:String = "default";
@@ -84,7 +74,6 @@ class Note extends FlxSprite
 
 	public var sustainLength:Float = 0;
 	public var isSustainNote:Bool = false;
-	public var noSustainClip:Bool = false;
 	public var flipSustain:Bool = true;
 
 	public var noteTypeID:Int = 0;
@@ -115,8 +104,6 @@ class Note extends FlxSprite
 
 	public var animSuffix:String = null;
 
-	// Deprecated?
-	@:dox(hide) public var tripTimer:Float = 0; // ranges from 0 to 1
 
 	private static function customTypePathExists(path:String) {
 		if (__customNoteTypeExists.exists(path))
@@ -126,7 +113,8 @@ class Note extends FlxSprite
 
 	static var DEFAULT_FIELDS:Array<String> = ["time", "id", "type", "sLen"];
 
-	public function new(strumLine:StrumLine, noteData:ChartNote, sustain:Bool = false, sustainLength:Float = 0, sustainOffset:Float = 0, ?prev:Note) {
+	public function new(strumLine:StrumLine, noteData:ChartNote, sustain:Bool = false, sustainLength:Float = 0, sustainOffset:Float = 0, ?prev:Note)
+	{
 		super();
 
 		moves = false;
@@ -223,7 +211,6 @@ class Note extends FlxSprite
 	public var lastScrollSpeed:Null<Float> = null;
 	public var gapFix:SingleOrFloat = 0;
 	public var useAntialiasingFix(get, set):Bool;
-
 	inline function set_useAntialiasingFix(v:Bool) {
 		if(v != useAntialiasingFix) {
 			gapFix = v ? 1 : 0;
@@ -240,85 +227,60 @@ class Note extends FlxSprite
 	 */
 	public var strumRelativePos:Bool = true;
 
-	@:dox(hide) static var __lastAngle:Float = Math.NaN;
-	@:dox(hide) static var __lastAngleSin:Float = 0;
-	@:dox(hide) static var __lastAngleCos:Float = 0;
-	@:dox(hide) static var __lastStrumW:Float = Math.NaN;
-	@:dox(hide) static var __lastStrumH:Float = Math.NaN;
-	@:dox(hide) static var __lastStrumHalfW:Float = 0;
-	@:dox(hide) static var __lastStrumHalfH:Float = 0;
+	override function drawComplex(camera:FlxCamera) {
+		var downscrollCam = (camera is HudCamera ? ({var _:HudCamera=cast camera;_;}).downscroll : false);
+		if (updateFlipY) flipY = (isSustainNote && flipSustain) && (downscrollCam != (__strum != null && __strum.getScrollSpeed(this) < 0));
+		if (downscrollCam) {
+			frameOffset.y += __notePosFrameOffset.y * 2;
+			super.drawComplex(camera);
+			frameOffset.y -= __notePosFrameOffset.y * 2;
+		} else
+			super.drawComplex(camera);
+	}
+
+	static var __notePosFrameOffset:FlxPoint = new FlxPoint();
+	static var __posPoint:FlxPoint = new FlxPoint();
 
 	override function draw() {
 		@:privateAccess var oldDefaultCameras = FlxCamera._defaultCameras;
 		@:privateAccess if (__strumCameras != null) FlxCamera._defaultCameras = __strumCameras;
 
-		var negativeScroll = isSustainNote && strumRelativePos && lastScrollSpeed < 0;
-		if (negativeScroll) y -= height;
+		var negativeScroll = isSustainNote && nextSustain != null && lastScrollSpeed < 0;
+		if (negativeScroll)	offset.y *= -1;
+
 		if (__strum != null && strumRelativePos) {
-			final originalX = x;
-			final originalY = y;
+			var pos = __posPoint.set(x, y);
 
-			if (__noteAngle != __lastAngle) {
-				__lastAngle = __noteAngle;
-				final result = FlxMath.fastSinCos((__noteAngle + 90) * FlxAngle.TO_RAD);
-				__lastAngleSin = result.sin;
-				__lastAngleCos = result.cos;
-			}
+			setPosition(__strum.x, __strum.y);
 
-			if (__strum.width != __lastStrumW || __strum.height != __lastStrumH) {
-				__lastStrumW = __strum.width;
-				__lastStrumH = __strum.height;
-				__lastStrumHalfW = __strum.width * 0.5;
-				__lastStrumHalfH = __strum.height * 0.5;
-			}
+			__notePosFrameOffset.set(pos.x / scale.x, pos.y / scale.y);
 
-			x = -origin.x + offset.x + (originalY * __lastAngleCos) + __strum.x + __lastStrumHalfW;
-			y = -origin.y + offset.y + (originalY * __lastAngleSin) + __strum.y + __lastStrumHalfH;
+			frameOffset.x -= __notePosFrameOffset.x;
+			frameOffset.y -= __notePosFrameOffset.y;
+
+			this.frameOffsetAngle = __noteAngle;
+
 			super.draw();
-			x = originalX;
-			y = originalY;
+
+			this.frameOffsetAngle = 0;
+
+			frameOffset.x += __notePosFrameOffset.x;
+			frameOffset.y += __notePosFrameOffset.y;
+
+			setPosition(pos.x, pos.y);
+			//pos.put();
 		} else {
+			__notePosFrameOffset.set(0, 0);
 			super.draw();
 		}
-		if (negativeScroll) y += height;
 
+		if (negativeScroll)	offset.y *= -1;
 		@:privateAccess FlxCamera._defaultCameras = oldDefaultCameras;
 	}
 
-	var __lastDownscrollCam:Bool = false;
-	var __lastX:Float = 0;
-
-	@:noCompletion @:dox(hide) override function isOnScreen(?camera:FlxCamera):Bool {
-		var downscrollCam = (Std.isOfType(camera, HudCamera) ? cast(camera, HudCamera).downscroll : false);
-
-		if (downscrollCam == __lastDownscrollCam)
-			return super.isOnScreen(camera);
-		else
-			__lastX = x;
-
-		if (updateFlipY) flipY = (isSustainNote && flipSustain) && (downscrollCam != (__strum != null && __strum.getScrollSpeed(this) < 0));
-		if (downscrollCam && __strum != null) {
-			x = -x + 2 * (__strum.x - origin.x + offset.x) + __strum.width;
-		}
-		final isOnScreen = super.isOnScreen(camera);
-		return isOnScreen;
-	}
-
-	override function drawComplex(camera:FlxCamera):Void {
-		super.drawComplex(camera);
-
-		if (__lastDownscrollCam) {
-			__lastDownscrollCam = false;
-			x = __lastX;
-		}
-	}
-
-	public function isOnScreenOriginal(?camera:FlxCamera):Bool {
-    return super.isOnScreen(camera);
-	}
-
-	public var earlyPressWindow:Float = Flags.EARLY_HIT_WINDOW_RANGE;
-	public var latePressWindow:Float = Flags.LATE_HIT_WINDOW_RANGE;
+	// The * 0.5 is so that it's easier to hit them too late, instead of too early
+	public var earlyPressWindow:Float = 0.5;
+	public var latePressWindow:Float = 1;
 
 	public function updateSustain(strum:Strum) {
 		var scrollSpeed = strum.getScrollSpeed(this);
@@ -335,29 +297,19 @@ class Note extends FlxSprite
 		updateSustainClip();
 	}
 
-	public function updateSustainClip() if (wasGoodHit && !noSustainClip) {
-		var t = CoolUtil.bound((Conductor.songPosition - strumTime) / height * 0.45 * lastScrollSpeed, 0, 1);
-		@:bypassAccessor {
-			if (clipRect == null) clipRect = FlxRect.get();
-			clipRect.set(0, frameHeight * t, frameWidth, frameHeight * (1 - t));
-		}
-		@:privateAccess {
-			if (frame != null && _frame != null)
-				_frame = frame.clipTo(clipRect, _frame);
-		}
+	public function updateSustainClip() if (wasGoodHit) {
+		var t = FlxMath.bound((Conductor.songPosition - strumTime) / height * 0.45 * lastScrollSpeed, 0, 1);
+		var rect = clipRect == null ? FlxRect.get() : clipRect;
+		clipRect = rect.set(0, frameHeight * t, frameWidth, frameHeight * (1 - t));
 	}
 
 	@:noCompletion
-	override function set_clipRect(rect:FlxRect):FlxRect {
-		@:bypassAccessor clipRect = rect;
+	override function set_clipRect(rect:FlxRect):FlxRect
+	{
+		clipRect = rect;
 
-		@:privateAccess if (frame != null) {
-			if (rect != null && _frame != null)
-				_frame = frame.clipTo(rect, _frame);
-			else if (_frame != null)
-				_frame = frame.copyTo(_frame);
-			dirty = true;
-		}
+		if (frames != null)
+			frame = frames.frames[animation.frameIndex];
 
 		return rect;
 	}

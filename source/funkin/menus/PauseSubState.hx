@@ -54,9 +54,6 @@ class PauseSubState extends MusicBeatSubstate
 		if (menuItems.contains("Exit to charter") && !PlayState.chartingMode)
 			menuItems.remove("Exit to charter");
 
-		if (controls.mobileC)
-			menuItems.remove("Change Controls");
-
 		add(parentDisabler = new FunkinParentDisabler());
 
 		pauseScript = Script.create(Paths.script(script));
@@ -68,12 +65,10 @@ class PauseSubState extends MusicBeatSubstate
 
 		menuItems = event.options;
 
-		if (Assets.exists(Paths.music(event.music))) {
-			pauseMusic = FlxG.sound.load(Assets.getMusic(Paths.music(event.music)), 0, true);
-			pauseMusic.persist = false;
-			pauseMusic.group = FlxG.sound.defaultMusicGroup;
-			pauseMusic.play(false, FlxG.random.int(0, Std.int(pauseMusic.length / 2)));
-		}
+		pauseMusic = FlxG.sound.load(Assets.getMusic(Paths.music(event.music)), 0, true);
+		pauseMusic.persist = false;
+		pauseMusic.group = FlxG.sound.defaultMusicGroup;
+		pauseMusic.play(false, FlxG.random.int(0, Std.int(pauseMusic.length / 2)));
 
 		if (__cancelDefault = event.cancelled) return;
 
@@ -84,8 +79,8 @@ class PauseSubState extends MusicBeatSubstate
 		bg.scrollFactor.set();
 		add(bg);
 
-		var multiplayerInfo:String = PlayState.opponentMode ? 'pause.opponentMode' :
-									 PlayState.coopMode ? 'pause.coopMode' :
+		var multiplayerInfo:String = PlayState.opponentMode ? 'pause.coopMode' :
+									 PlayState.coopMode ? 'pause.opponentMode' :
 									 null;
 
 		levelInfo = new FunkinText(20, 15, 0, PlayState.SONG.meta.displayName, 32, false);
@@ -124,38 +119,34 @@ class PauseSubState extends MusicBeatSubstate
 		camera = new FlxCamera();
 		camera.bgColor = 0;
 		FlxG.cameras.add(camera, false);
-	}
 
-	override function createPost() {
-		super.createPost();
+		addTouchPad('UP_DOWN', 'A');
+		addTouchPadCamera();
+		
 		pauseScript.call("postCreate");
-		game.updateDiscordPresence();
 
-		addDPad("UP_DOWN");
-		addButton("A");
-		addDPadCamera();
-		addButtonCamera();
+		game.updateDiscordPresence();
 	}
 
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
 
-		if (pauseMusic != null && pauseMusic.volume < 0.5)
+		if (pauseMusic.volume < 0.5)
 			pauseMusic.volume += 0.01 * elapsed;
 
 		pauseScript.call("update", [elapsed]);
 
 		if (__cancelDefault) return;
 
-		var upP = controls.UP_P;
-		var downP = controls.DOWN_P;
+		var upP = (controls.UP_P #if TOUCH_CONTROLS || touchPad != null && touchPad.buttonUp.justPressed #end);
+		var downP = (controls.DOWN_P #if TOUCH_CONTROLS || touchPad != null && touchPad.buttonDown.justPressed #end);
 		var scroll = FlxG.mouse.wheel;
 
 		if (upP || downP || scroll != 0)  // like this we wont break mods that expect a 0 change event when calling sometimes  - Nex
 			changeSelection((upP ? -1 : 0) + (downP ? 1 : 0) - scroll);
 
-		if (controls.ACCEPT)
+		if (controls.ACCEPT #if TOUCH_CONTROLS || touchPad != null && touchPad.buttonA.justPressed #end)
 			selectOption();
 	}
 
@@ -175,8 +166,7 @@ class PauseSubState extends MusicBeatSubstate
 				FlxG.resetState();
 			case "Change Controls":
 				persistentDraw = false;
-				removeDPad();
-				removeButton();
+				removeTouchPad();
 				openSubState(new KeybindsOptions());
 			case "Change Options":
 				FlxG.switchState(new OptionsMenu((_) -> FlxG.switchState(new PlayState())));
@@ -197,6 +187,15 @@ class PauseSubState extends MusicBeatSubstate
 
 		}
 	}
+	
+	override function closeSubState() {
+		persistentUpdate = persistentDraw = true;
+		super.closeSubState();
+		removeTouchPad();
+		addTouchPad('UP_DOWN', 'A');
+		addTouchPadCamera();
+	}
+	
 	override function destroy()
 	{
 		if(camera != FlxG.camera && _cameras != null) {
@@ -211,17 +210,6 @@ class PauseSubState extends MusicBeatSubstate
 			FlxG.sound.destroySound(pauseMusic);
 		}
 		super.destroy();
-	}
-
-	override function closeSubState() {
-		persistentUpdate = true;
-		super.closeSubState();
-		removeDPad();
-		removeButton();
-		addDPad("UP_DOWN");
-		addButton("A");
-		addDPadCamera();
-		addButtonCamera();
 	}
 
 	function changeSelection(change:Int = 0):Void

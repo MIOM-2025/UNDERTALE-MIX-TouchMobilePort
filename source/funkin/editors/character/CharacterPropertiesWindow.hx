@@ -1,6 +1,7 @@
 
 package funkin.editors.character;
 
+import funkin.backend.FlxAnimate;
 import haxe.io.Path;
 import funkin.editors.character.CharacterInfoScreen.CharacterExtraInfo;
 import funkin.game.Character;
@@ -183,15 +184,31 @@ class CharacterPropertiesWindow extends UISliceSprite {
 		character.sprite = sprite;
 
 		animsWindow.displayWindowSprite.animation.reset();
-		animsWindow.clearDisplayAnims();
+		animsWindow.displayAnimsFramesList.clear();
 		if (animsWindow.displayWindowGraphic != null) 
 			animsWindow.displayWindowGraphic.destroy();
 
-		character.frames = Paths.getFrames(path, true);
+		if (Assets.exists('$noExt/Animation.json')) {
+			if (character.animateAtlas == null) {
+				character.animation.reset();
+				character.animateAtlas = new FlxAnimate(character.x, character.y);
+			} else
+				character.animateAtlas.anim.stop();
 
-		animsWindow.displayWindowSprite.loadGraphicFromSprite(character);
-		if (Assets.exists(Paths.image('characters/${character.sprite}')))
-			animsWindow.displayWindowGraphic = FlxG.bitmap.add(Assets.getBitmapData(Paths.image('characters/${character.sprite}'), true, false));
+			character.atlasPath = noExt;
+			character.animateAtlas.loadAtlas(noExt);
+		} else {
+			if (character.animateAtlas != null) {
+				character.animateAtlas.destroy();
+				character.animateAtlas = null;
+				character.atlasPlayingAnim = character.atlasPath = null;
+			}
+			character.frames = Paths.getFrames(path, true);
+
+			animsWindow.displayWindowSprite.loadGraphicFromSprite(character);
+			if (Assets.exists(Paths.image('characters/${character.sprite}')))
+				animsWindow.displayWindowGraphic = FlxG.bitmap.add(Assets.getBitmapData(Paths.image('characters/${character.sprite}'), true, false));
+		}
 
 		character.animDatas.clear();
 		for (anim in animsWindow.buttons) anim.checkValid(); // Re-add all animations

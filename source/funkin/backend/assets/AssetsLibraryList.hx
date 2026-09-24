@@ -5,22 +5,9 @@ import funkin.backend.assets.TranslatedAssetLibrary;
 #end
 import funkin.backend.assets.IModsAssetLibrary;
 import lime.utils.AssetLibrary;
-import haxe.ds.Map;
 
 class AssetsLibraryList extends AssetLibrary {
-
 	public var libraries:Array<AssetLibrary> = [];
-	public var cleanLibraries(get, never):Array<AssetLibrary>;
-	function get_cleanLibraries():Array<AssetLibrary> {
-		return [for (l in libraries) getCleanLibrary(l)];
-	}
-	
-	// is true if any library in `libraries` contains some kind of compressed library. 
-	public var hasCompressedLibrary(get, never):Bool;
-	function get_hasCompressedLibrary():Bool {
-		for (l in libraries) if (getCleanLibrary(l).isCompressed) return true;
-		return false;
-	}
 
 	@:allow(funkin.backend.system.Main)
 	@:allow(funkin.backend.system.MainState)
@@ -154,16 +141,6 @@ class AssetsLibraryList extends AssetLibrary {
 	public override inline function getAsset(id:String, type:String):Dynamic
 		return getSpecificAsset(id, type, BOTH);
 
-	public override function list(type:String):Array<String> {
-		// idk if there's a more efficient way tbh, correct if u find better
-		var files:Map<String, Bool> = [];
-		for(k=>l in libraries) {
-			for(f in l.list(type))
-				files.set(f, false);
-		}
-		return [for(k=>e in files) k];
-	}
-
 	public override function isLocal(id:String, type:String) {
 		return true;
 	}
@@ -184,7 +161,7 @@ class AssetsLibraryList extends AssetLibrary {
 
 		__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', '${Main.pathBack}assets/', true, SOURCE));
 		#elseif USE_ADAPTED_ASSETS
-		__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', #if mobile MobileUtil.getAssetDirectory() + #end "assets/", true, SOURCE));
+		__defaultLibraries.push(ModsFolder.loadLibraryFromFolder('assets', #if mobile StorageUtil.getStorageDirectory(true) + #end 'assets/', true, SOURCE));
 		#end
 		for (d in __defaultLibraries) addLibrary(d);
 	}
@@ -229,5 +206,22 @@ class AssetsLibraryList extends AssetLibrary {
 			if (al.__proxy != null) l = al.__proxy;
 		}
 		return l;
+	}
+	
+	override public function list(type:String):Array<String>
+	{
+		var items = [];
+
+		for (library in libraries)
+		{
+			var libraryItems = library.list(type);
+
+			if (libraryItems != null)
+			{
+				items = items.concat(libraryItems);
+			}
+		}
+
+		return items;
 	}
 }

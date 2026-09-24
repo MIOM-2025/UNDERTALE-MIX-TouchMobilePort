@@ -55,6 +55,9 @@ class GlobalScript {
 				reloading = false;
 				MusicBeatState.ALLOW_DEV_RELOAD = _lastAllow_Reload;
 			}
+
+			if (PlayerSettings.solo.controls.DEV_CONSOLE)
+				NativeAPI.allocConsole();
 		});
 		FlxG.signals.preDraw.add(function() {
 			call("preDraw");
@@ -103,41 +106,38 @@ class GlobalScript {
 		});
 	}
 
-	public static function onModSwitch(newMod:String) {
-		destroy();
-		scripts = new ScriptPack("GlobalScript");
-		for (lib in funkin.backend.assets.ModsFolder.getLoadedModsLibs()) {
-			var modName = lib.modName;
-			var path = Paths.script('data/global/LIB_$modName');
-			var script = Script.create(path);
-			if (script is DummyScript) continue;
-			script.remappedNames.set(script.fileName, '$modName:${script.fileName}');
-			// so you can get the current mod's library in GloablScript :)
-			// you should not make this a static variable then all scripts will try to reference the 1 static variable, which will be overwritten :yoikes:
-			script.set("MOD_LIBRARY", lib);
-			scripts.add(script);
-			script.load();
-		}
-	}
-
-	public static inline function event<T:CancellableEvent>(name:String, event:T):T {
+	public static function event<T:CancellableEvent>(name:String, event:T):T {
 		if (scripts != null)
 			scripts.event(name, event);
 		return event;
 	}
 
-	public static inline function call(name:String, ?args:Array<Dynamic>)
-		if (scripts != null) scripts.call(name, args);
+	public static function call(name:String, ?args:Array<Dynamic>) {
+		if (scripts != null)
+			scripts.call(name, args);
+	}
 
-	public static inline function beatHit(curBeat:Int)
-		call("beatHit", [curBeat]);
-
-	public static inline function stepHit(curStep:Int)
-		call("stepHit", [curStep]);
-
-	public static inline function destroy() if (scripts != null) {
+	public static function onModSwitch(newMod:String) {
 		call("destroy");
 		scripts = FlxDestroyUtil.destroy(scripts);
+		scripts = new ScriptPack("GlobalScript");
+		for (i in funkin.backend.assets.ModsFolder.getLoadedMods()) {
+			var path = Paths.script('data/global/LIB_$i');
+			var script = Script.create(path);
+			if (script is DummyScript)
+				continue;
+			script.remappedNames.set(script.fileName, '$i:${script.fileName}');
+			scripts.add(script);
+			script.load();
+		}
+	}
+
+	public static function beatHit(curBeat:Int) {
+		call("beatHit", [curBeat]);
+	}
+
+	public static function stepHit(curStep:Int) {
+		call("stepHit", [curStep]);
 	}
 }
 #end

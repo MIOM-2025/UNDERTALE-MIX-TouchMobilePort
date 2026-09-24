@@ -10,11 +10,7 @@ import openfl.utils.AssetManifest;
 
 using StringTools;
 #if MOD_SUPPORT
-#if sys
 import sys.FileSystem;
-#elseif js
-import js.html.FileSystem;
-#end
 #end
 
 
@@ -29,13 +25,17 @@ class ModsFolder {
 	 */
 	public static var currentModFolder:String = null;
 	/**
+	 * Path to the `assets` folder.
+	 */
+	public static var assetsPath:String = #if mobile StorageUtil.getStorageDirectory(true) + #end "assets/";
+	/**
 	 * Path to the `mods` folder.
 	 */
-	public static var modsPath:String = #if mobile MobileUtil.getDirectory() + #else Sys.getCwd() + #end "mods/";
+	public static var modsPath:String = #if mobile StorageUtil.getStorageDirectory(true) + #end "mods/";
 	/**
 	 * Path to the `addons` folder.
 	 */
-	public static var addonsPath:String = #if mobile MobileUtil.getDirectory() + #else Sys.getCwd() + #end "addons/";
+	public static var addonsPath:String = #if mobile StorageUtil.getStorageDirectory(true) + #end "addons/";
 
 	/**
 	 * If accessing a file as assets/data/global/LIB_mymod.hx should redirect to mymod:assets/data/global.hx
@@ -51,9 +51,9 @@ class ModsFolder {
 	 * Initializes `mods` folder.
 	 */
 	public static function init() {
+		if (!FileSystem.exists(assetsPath)) FileSystem.createDirectory(assetsPath);
 		if (!FileSystem.exists(modsPath)) FileSystem.createDirectory(modsPath);
 		if (!FileSystem.exists(addonsPath)) FileSystem.createDirectory(addonsPath);
-
 		if(!getModsList().contains(Options.lastLoadedMod)) {
 			if(Options.lastLoadedMod != null)
 				Logs.warn("Mod \"" + Options.lastLoadedMod + "\" not found in mods list, switching to base game!");
@@ -90,11 +90,10 @@ class ModsFolder {
 	 */
 	public static function loadModLib(path:String, force:Bool = false, ?modName:String) {
 		#if MOD_SUPPORT
-		for (ext in Flags.ALLOWED_ZIP_EXTENSIONS) {
-			if (!FileSystem.exists('$path.$ext')) continue;
-			return loadLibraryFromZip('$path'.toLowerCase(), '$path.$ext', force, modName);
-		}
-		return loadLibraryFromFolder('$path'.toLowerCase(), '$path', force, modName);
+		if (FileSystem.exists('$path.zip'))
+			return loadLibraryFromZip('$path'.toLowerCase(), '$path.zip', force, modName);
+		else
+			return loadLibraryFromFolder('$path'.toLowerCase(), '$path', force, modName);
 
 		#else
 		return null;
@@ -104,13 +103,27 @@ class ModsFolder {
 	public static function getModsList():Array<String> {
 		var mods:Array<String> = [];
 		#if MOD_SUPPORT
+		if (!FileSystem.exists(modsPath)) {
+			// Mods directory does not exist yet, create it
+			FileSystem.createDirectory(modsPath);
+		}
+		
 		final modsList:Array<String> = FileSystem.readDirectory(modsPath);
 
-		if (modsList == null || modsList.length <= 0) return mods;
+		if (modsList == null || modsList.length <= 0)
+			return mods;
 
 		for (modFolder in modsList) {
-			if (FileSystem.isDirectory(modsPath + modFolder)) mods.push(modFolder);
-			else if (Flags.ALLOWED_ZIP_EXTENSIONS.contains(Path.extension(modFolder))) mods.push(Path.withoutExtension(modFolder));
+			if (FileSystem.isDirectory(modsPath + modFolder)) {
+				mods.push(modFolder);
+			} else {
+				var ext = Path.extension(modFolder).toLowerCase();
+				switch(ext) {
+					case 'zip':
+						// is a zip mod!!
+						mods.push(Path.withoutExtension(modFolder));
+				}
+			}
 		}
 		#end
 		return mods;
@@ -122,9 +135,7 @@ class ModsFolder {
 			#if TRANSLATIONS_SUPPORT
 			if(skipTranslated && (l is TranslatedAssetLibrary)) continue;
 			#end
-			// No need to check for it being a `ScriptedAssetLibrary`, if `ScriptedAssetLibrary` extends ModsFolderLibrary, which implements `IModsAssetLibrary`
-			// If you have to revert this change then uhhhhh wasn't me, trust 🙏
-			if (/*l is ScriptedAssetLibrary ||*/ l is IModsAssetLibrary) libs.push(cast(l, IModsAssetLibrary));
+			if (l is ScriptedAssetLibrary || l is IModsAssetLibrary) libs.push(cast(l, IModsAssetLibrary));
 		}
 		return libs;
 	}

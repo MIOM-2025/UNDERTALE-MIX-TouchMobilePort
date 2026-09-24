@@ -186,16 +186,6 @@ final class Windows {
 	public static function setWindowTitleColor(title:String, color:Array<Int>) {}
 
 	@:functionCode('
-	HWND window = GetConsoleWindow();
-	HICON smallIcon = (HICON) LoadImage(NULL, path, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
-	HICON icon = (HICON) LoadImage(NULL, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
-	SendMessage(window, WM_SETICON, ICON_SMALL, (LPARAM)smallIcon);
-	SendMessage(window, WM_SETICON, ICON_BIG, (LPARAM)icon);    
-	')
-	public static function setWindowIcon(path:String) {}
-
-
-	@:functionCode('
 	// https://stackoverflow.com/questions/15543571/allocconsole-not-displaying-cout
 
 	if (!AllocConsole())
@@ -204,9 +194,6 @@ final class Windows {
 	freopen("CONIN$", "r", stdin);
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
-
-	SetConsoleOutputCP(65001);
-	SetConsoleCP(65001);
 	')
 	public static function allocConsole() {
 	}

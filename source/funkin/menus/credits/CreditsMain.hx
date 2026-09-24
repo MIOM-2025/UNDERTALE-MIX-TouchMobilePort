@@ -38,11 +38,9 @@ class CreditsMain extends TreeMenu {
 
 		first.add(new TextOption('Codename Engine', 'credits.selectCodename', ' >', () -> addMenu(new CreditsCodename())));
 		first.add(new TextOption('Friday Night Funkin\'', 'credits.selectBase', ' >', () -> CoolUtil.openURL(Flags.URL_FNF_ITCH)));
-
-		addDPad("UP_DOWN");
-		addButton("A_B");
-		addDPadCamera();
-		addButtonCamera();
+		
+		addTouchPad("UP_DOWN", "A_B");
+		addTouchPadCamera();
 	}
 
 	public function updateBG() {

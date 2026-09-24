@@ -96,11 +96,7 @@ class UISprite extends FlxSprite {
 		if(canBeHovered)
 			updateButtonHandler();
 		else {
-			var pressed = FlxG.mouse.pressed;
-			if (Controls.instance.mobileC)
-				pressed = ScreenUtil.touch.pressed;
-
-			if(pressed) {
+			if(FlxG.mouse.pressed) {
 				updateButtonHandler();
 			}
 		}
@@ -115,11 +111,7 @@ class UISprite extends FlxSprite {
 	 */
 	public function onHovered() {
 		hovered = true;
-		var localPressed = FlxG.mouse.pressed;
-		if (Controls.instance.mobileC)
-			localPressed = ScreenUtil.touch.pressed;
-
-		if (localPressed)
+		if (FlxG.mouse.pressed)
 			pressed = true;
 		if (hoverCallback != null)
 			hoverCallback();

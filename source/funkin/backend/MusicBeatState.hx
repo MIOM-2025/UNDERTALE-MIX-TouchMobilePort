@@ -13,6 +13,15 @@ import funkin.backend.system.framerate.Framerate;
 import funkin.backend.system.interfaces.IBeatReceiver;
 import funkin.backend.system.interfaces.IBeatCancellableReceiver;
 import funkin.options.PlayerSettings;
+#if TOUCH_CONTROLS
+import mobile.funkin.backend.utils.MobileData;
+import mobile.objects.Hitbox;
+import mobile.objects.TouchPad;
+import flixel.FlxCamera;
+import flixel.util.FlxDestroyUtil;
+import mobile.objects.MobileControls;
+import mobile.objects.IMobileControls;
+#end
 
 /**
  * Base class for all the states.
@@ -20,117 +29,6 @@ import funkin.options.PlayerSettings;
 **/
 class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 {
-	public static var instance:MusicBeatState;
-	public var mobileManager:MobileControls;
-	public function getMobilePadButton(name:String) {
-		return mobileManager.getButtonFromName(name);
-	}
-	public function mobileCJustPressed(buttons:Dynamic):Bool {
-		if (Std.isOfType(buttons, Array)) {
-			for (button in (buttons:Array<String>)) {
-				if (mobileManager.checkState(button, "justPressed"))
-					return true;
-			}
-		}
-		else if (Std.isOfType(buttons, String)) {
-			return mobileManager.checkState((buttons:String), "justPressed");
-		}
-		return false;
-	}
-	public function mobileCPressed(buttons:Dynamic):Bool {
-		if (Std.isOfType(buttons, Array)) {
-			for (button in (buttons:Array<String>)) {
-				if (mobileManager.checkState(button, "pressed"))
-					return true;
-			}
-		}
-		else if (Std.isOfType(buttons, String)) {
-			return mobileManager.checkState((buttons:String), "pressed");
-		}
-		return false;
-	}
-	public function mobileCJustReleased(buttons:Dynamic):Bool {
-		if (Std.isOfType(buttons, Array)) {
-			for (button in (buttons:Array<String>)) {
-				if (mobileManager.checkState(button, "justReleased"))
-					return true;
-			}
-		}
-		else if (Std.isOfType(buttons, String)) {
-			return mobileManager.checkState((buttons:String), "justReleased");
-		}
-		return false;
-	}
-	public function mobileCReleased(buttons:Dynamic):Bool {
-		if (Std.isOfType(buttons, Array)) {
-			for (button in (buttons:Array<String>)) {
-				if (mobileManager.checkState(button, "released"))
-					return true;
-			}
-		}
-		else if (Std.isOfType(buttons, String)) {
-			return mobileManager.checkState((buttons:String), "released");
-		}
-		return false;
-	}
-	/*
-	public function addMobilePad(DPad:String, Action:String) {
-		mobileManager.addDPad(DPad);
-		mobileManager.addButton(Action);
-	}
-	public function removeMobilePad() {
-		mobileManager.removeDPad();
-		mobileManager.removeButton();
-	}
-	public function addMobilePadCamera(defaultDrawTarget:Bool = false):Void {
-		mobileManager.addDPadCamera();
-		mobileManager.addButtonCamera();
-	}
-	*/
-	/* DPad */
-	public function addDPad(DPad:String) {
-		mobileManager.addDPad(DPad);
-	}
-	public function removeDPad() {
-		mobileManager.removeDPad();
-	}
-	public function addDPadCamera() {
-		mobileManager.addDPadCamera();
-	}
-
-	/* Button */
-	public function addButton(Action:String) {
-		mobileManager.addButton(Action);
-	}
-	public function removeButton() {
-		mobileManager.removeButton();
-	}
-	public function addButtonCamera() {
-		mobileManager.addButtonCamera();
-	}
-
-	/* Hitbox */
-	public function addHitbox(?mode:String = "Normal"):Void {
-		mobileManager.addHitbox(mode);
-	}
-	public function removeHitbox() {
-		mobileManager.removeHitbox();
-	}
-	public function addHitboxCamera(defaultDrawTarget:Bool = false):Void {
-		mobileManager.addHitboxCamera();
-	}
-
-	/* JoyStick */
-	public function addJoyStick(joy:String) {
-		mobileManager.addJoyStick(joy);
-	}
-	public function removeJoyStick() {
-		mobileManager.removeJoyStick();
-	}
-	public function addJoyStickCamera() {
-		mobileManager.addJoyStickCamera();
-	}
-
 	private var lastBeat:Float = 0;
 	private var lastStep:Float = 0;
 
@@ -225,11 +123,96 @@ class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 		return PlayerSettings.player1.controls;
 	inline function get_controlsP2():Controls
 		return PlayerSettings.player2.controls;
+		
+	#if TOUCH_CONTROLS
+	public var touchPad:TouchPad;
+	public var mobileControls:IMobileControls;
+	public var mobileControlsCam:FlxCamera;
+	public var tpadCam:FlxCamera;
+	#end
+
+	public function addTouchPad(DPad:String, Action:String)
+	{
+		#if TOUCH_CONTROLS
+		touchPad = new TouchPad(DPad, Action);
+		add(touchPad);
+		#end
+	}
+
+	public function removeTouchPad():Void
+	{
+		#if TOUCH_CONTROLS
+		if (touchPad != null)
+		{
+			remove(touchPad);
+			touchPad = FlxDestroyUtil.destroy(touchPad);
+		}
+
+		if(tpadCam != null)
+		{
+			FlxG.cameras.remove(tpadCam);
+			tpadCam = FlxDestroyUtil.destroy(tpadCam);
+		}
+		#end
+	}
+
+	public function addMobileControls(defaultDrawTarget:Bool = false):Void
+	{
+		#if TOUCH_CONTROLS
+		switch (MobileData.mode)
+		{
+			case 0: // RIGHT_FULL
+				mobileControls = new TouchPad('RIGHT_FULL', 'NONE');
+			case 1: // LEFT_FULL
+				mobileControls = new TouchPad('LEFT_FULL', 'NONE');
+			case 2: // CUSTOM
+				mobileControls = MobileData.getTouchPadCustom(new TouchPad('RIGHT_FULL', 'NONE'));
+			case 3: // HITBOX
+				mobileControls = new Hitbox();
+		}
+
+		mobileControlsCam = new FlxCamera();
+		mobileControlsCam.bgColor.alpha = 0;
+		FlxG.cameras.add(mobileControlsCam, defaultDrawTarget);
+
+		mobileControls.instance.cameras = [mobileControlsCam];
+		mobileControls.instance.visible = false;
+		add(mobileControls.instance);
+		#end
+	}
+
+	public function removeMobileControls()
+	{
+		#if TOUCH_CONTROLS
+		if (mobileControls != null)
+		{
+			remove(mobileControls.instance);
+			mobileControls.instance = FlxDestroyUtil.destroy(mobileControls.instance);
+			mobileControls = null;
+		}
+
+		if (mobileControlsCam != null)
+		{
+			FlxG.cameras.remove(mobileControlsCam);
+			mobileControlsCam = FlxDestroyUtil.destroy(mobileControlsCam);
+		}
+		#end
+	}
+
+	public function addTouchPadCamera(?defaultDrawTarget:Bool = false) {
+		#if TOUCH_CONTROLS
+		if (touchPad != null)
+		{
+			tpadCam = new FlxCamera();
+			tpadCam.bgColor.alpha = 0;
+			FlxG.cameras.add(tpadCam, defaultDrawTarget);
+			touchPad.cameras = [tpadCam];
+		}
+		#end
+	}
 
 	public function new(scriptsAllowed:Bool = true, ?scriptName:String) {
 		super();
-		mobileManager = new MobileControls();
-		mobileManager.antialiasing = true;
 		this.scriptsAllowed = #if SOFTCODED_STATES scriptsAllowed #else false #end;
 
 		if(lastStateName != (lastStateName = Type.getClassName(Type.getClass(this)))) {
@@ -253,6 +236,15 @@ class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 					script.remappedNames.set(script.fileName, '$i:${script.fileName}');
 					stateScripts.add(script);
 					script.load();
+					stateScripts.set('setTouchPadMode', function(DPadMode:String, ActionMode:String, ?addCamera = false){
+						#if TOUCH_CONTROLS
+						if(touchPad == null) return;
+						removeTouchPad();
+						addTouchPad(DPadMode, ActionMode);
+						if(addCamera)
+							addTouchPadCamera();
+						#end
+					});
 				}
 			}
 			#if EXPERMENTAL_SCRIPT_RELOADING
@@ -285,11 +277,9 @@ class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 
 	override function create()
 	{
-		instance = this;
 		loadScript();
 		Framerate.offset.y = 0;
 		super.create();
-		add(mobileManager);
 		call("create");
 	}
 
@@ -342,6 +332,9 @@ class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 			stateScripts.call(name, [event]);
 		return event;
 	}
+
+	public static function getState():MusicBeatState
+		return cast (FlxG.state, MusicBeatState);
 
 	override function update(elapsed:Float)
 	{
@@ -403,9 +396,11 @@ class MusicBeatState extends FlxState implements IBeatCancellableReceiver
 	}
 
 	public override function destroy() {
+		#if TOUCH_CONTROLS
+		removeTouchPad();
+		removeMobileControls();
+		#end
 		super.destroy();
-		if (mobileManager != null) mobileManager.destroy();
-		instance = null;
 		graphicCache.destroy();
 		call("destroy");
 		stateScripts = FlxDestroyUtil.destroy(stateScripts);

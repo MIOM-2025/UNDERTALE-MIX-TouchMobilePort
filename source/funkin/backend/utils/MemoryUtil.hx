@@ -94,11 +94,11 @@ final class MemoryUtil {
 			#elseif mac
 			return funkin.backend.utils.native.Mac.getTotalRam();
 			#elseif ios
-			return funkin.backend.utils.native.IOS.getTotalRam();
+		    return funkin.backend.utils.native.IOS.getTotalRam();
 			#elseif linux
 			return funkin.backend.utils.native.Linux.getTotalRam();
 			#elseif android
-			return funkin.backend.utils.native.Android.getTotalRam();
+		    return funkin.backend.utils.native.Android.getTotalRam();
 			#else
 			return 0;
 			#end
@@ -178,6 +178,8 @@ final class MemoryUtil {
 		var reg = ~/Type: (.+)/;
 		reg.match(process.stdout.readAll().toString());
 		if (process.exitCode() == 0) return reg.matched(1);
+		#elseif android
+		// MTODO: Do get mem type for android smh?
 		#elseif linux
 		/*var process = new HiddenProcess("sudo", ["dmidecode", "--type", "17"]);
 		if (process.exitCode() != 0) return "Unknown";
