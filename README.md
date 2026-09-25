@@ -1,19 +1,10 @@
-# FND' - Codename Engine Build
+# UNDERTALE MIX - Mobile Port Build
 
-![fnd](art/dustin-header.webp)
+<div style="text-align:center;font-size:1.2em;">
 
-<div style="text-align:center;font-size: 20px; font-size: 1.2em;">
+**Pure touch port.**
 
-T H E &nbsp; V E S S E L S &nbsp; A R E &nbsp; R E A D Y.
-
-A F T E R &nbsp; A L L &nbsp; T H E S E &nbsp; Y E A R S.
-
-A R E &nbsp; Y O U &nbsp; R E A D Y ?
 </div>
-
-DUSTIN MOD DOWNLOADS:
--  **GAMEBANANA:** [https://gamebanana.com/mods/613322](https://gamebanana.com/mods/613322)
--  **GAME JOLT:**  [https://gamejolt.com/games/fridaynightdustinFULL/1012008](https://gamejolt.com/games/fridaynightdustinFULL/1012008)
 
 # ENGINE???
 This mod is made on a extensible modding framework for FNF: Codename Engine. This source code folder can be placed in the mods folder to be played in codename!
