@@ -5,6 +5,7 @@ import flixel.addons.display.FlxBackdrop;
 import flixel.math.FlxRandom;
 import funkin.backend.utils.DiscordUtil;
 import flixel.util.FlxTimer;
+import mobile.funkin.backend.system.MobileControlSelectSubState; // 确保导入了这个类
 
 var stateCamera:FlxCamera = new FlxCamera();
 var boxCamera:FlxCamera = new FlxCamera();
@@ -19,6 +20,8 @@ var description:TypedBitmapText;
 var selected:Int = 0;
 var optionSelected:Bool = false;
 var optionObjects:Array<Dynamic> = [];
+
+// ========== 修改点 1：在 categories 数组最后添加 Mobile Settings ==========
 var categories:Array<Dynamic> = [
 	{
 		title: 'Controls',
@@ -35,8 +38,15 @@ var categories:Array<Dynamic> = [
 	{
 		title: 'Miscellaneous',
 		description: '*Anything that doesn\'t/ñfit in with the rest.'
+	},
+	// 新增的手机设置选项，英文名用于调度，描述用英文以防翻译缺失
+	{
+		title: 'Mobile Settings',
+		description: '*Open the mobile control/ñconfiguration menu.'
 	}
 ];
+// ========================================================================
+
 var categoryData = [
 	'gameplay' => [
 		{
@@ -47,16 +57,14 @@ var categoryData = [
 			parentValue: 'downscroll',
 			saveTo: Options
 		},
-		// ----- MiddleScroll 选项（存储到 FlxG.save.data）-----
 		{
 			type: 'checkbox',
 			title: 'MiddleScroll',
 			description: '*If checked, notes will scroll/ñfrom the center.',
 			defaultValue: false,
 			parentValue: 'middleScroll',
-			saveTo: FlxG.save.data   // 改用存档保存，而非 Options
+			saveTo: FlxG.save.data
 		},
-		// ---------------------------------------------------------
 		{
 			type: 'checkbox',
 			title: 'Ghost Tapping',
@@ -495,10 +503,18 @@ function update(elapsed:Float) {
 		}
 	}
 
+	// ========== 修改点 2：子菜单退出时恢复背景和标题的显示 ==========
 	if (inSubState && this.subState == null) {
 		inSubState = false;
 		optionSelected = false;
 		boxCamera.visible = true;
+		
+		// 恢复背景和标题的显示
+		bg.visible = true;
+		title.visible = true;
+		box.visible = true;
+		if (description != null) description.visible = true;
+
 		title.text = 'OPTIONS';
 		for (object in optionObjects) {
 			object.object.x = object.initX;
@@ -516,6 +532,7 @@ function update(elapsed:Float) {
 		exitButton.x = 10;
 		exitButton.y = 10;
 	}
+	// ======================================================================
 
 	lerp = Math.exp(-elapsed * 28);
 	for (object in optionObjects) {
@@ -719,12 +736,23 @@ function performAccept() {
 	optionSelected = true;
 	inSubState = true;
 	
+	// ========== 修改点 3：处理 mobile settings 并隐藏主菜单 UI 防止错乱 ==========
 	switch(categories[selected].title.toLowerCase()) {
 		case 'controls':
 			openSubState(new ModSubState('OptionsKeybinds', [{
 				originalBg: bg
 			}]));
 			specialSubMenu = true;
+		case 'mobile settings':
+			// 隐藏上层菜单的背景和标题，防止与移动端设置界面重叠造成UI错乱
+			bg.visible = false;
+			title.visible = false;
+			box.visible = false;
+			if (description != null) description.visible = false;
+
+			// 调用原版模块的移动端控制选择子状态
+			openSubState(new MobileControlSelectSubState());
+			specialSubMenu = true; // 标记为特殊子菜单，防止底层状态冲突
 		default:
 			var stateData:Array<Dynamic> = [
 				{
@@ -740,6 +768,7 @@ function performAccept() {
 			title.text = categories[selected].title.toUpperCase();
 			openSubState(new ModSubState('OptionCategorySubstate', stateData));
 	}
+	// ======================================================================
 }
 
 function updateSelection(?v:Int) {

@@ -21,14 +21,6 @@ var hintShader = new CustomShader("hintText");
 function new() {
     // 进入场景立即隐藏帧率（每次都会执行）
     Framerate.debugMode = 0;
-
-    // 首次运行弹窗，之后不再弹出
-    if (FlxG.save.data.FRTS == null) {
-        var msg = "非常感谢你游玩我们UNDERTALE MIX的模组移植\n这款移植我打磨了很久，希望你能在哔哩哔哩上的原视频给我一键三连\n本次移植使用一种比较新颖的移植方法\n舍弃了虚拟按键，直接用滑动和手指点击来进行任意的操作\n希望你能获得更好的游戏体验\n如有bug，请在Github上提交建议:\nhttps://github.com/MIOM-2025/Undertale-mix-MobilePort\n或者QQ加群反馈:1067373835\n\nThank you very much for playing our UNDERTALE MIX mod port.\nThis port has been polished for a long time. I hope you can give me a triple-kudos on the original video on Bilibili.\nThis port uses a relatively novel porting method.\nVirtual buttons are abandoned, and you can perform any operation directly by sliding and tapping with your fingers.\nI hope you can get a better gaming experience.\nIf there are bugs, please submit suggestions on Github:\nhttps://github.com/MIOM-2025/Undertale-mix-MobilePort\nOr join the QQ group to report: 1067373835";
-        NativeAPI.showMessageBox('Hey!!!', msg);
-        FlxG.save.data.FRTS = true;
-        FlxG.save.flush();
-    }
 }
 
 // ---------- 第一屏动画变量 ----------
