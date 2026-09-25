@@ -2,7 +2,8 @@ import funkin.backend.system.Flags;
 import funkin.backend.utils.DiscordUtil;
 import funkin.options.OptionsMenu;
 import funkin.backend.system.Controls.Control;
-import funkin.options.Options; // 添加，用于音量控制
+import funkin.options.Options;
+import haxe.Date;
 
 import flixel.util.FlxStringUtil;
 import flixel.input.mouse.FlxMouseEvent;
@@ -33,18 +34,26 @@ var bg:FlxSprite;
 var storyModeButton:UndertaleText;
 var buttonScale:Int = 3;
 var curSelected:Int = 0;
-var objectDistance:Int = 16;          // 间距调小
+var objectDistance:Int = 16;
 var nameSelected:Bool = false;
 var optionSelected:Bool = false;
 var weirdName:Bool = false;
 
 // ========== 模式管理 ==========
-var inputMode:String = "keyboard";     // "keyboard" 或 "touch"
-var hoveredObject:UndertaleText = null; // 触摸模式下悬停的选项
-var canInteract:Bool = false;          // 入场动画是否结束，允许交互
+var inputMode:String = "keyboard";
+var hoveredObject:UndertaleText = null;
+var canInteract:Bool = false;
 
-// 存储每个选项的原始 X 和 Y（Y 会随故事模式消失而改变）
 var originalX:Array<Float> = [];
+
+// ========== 系统时间辅助函数 ==========
+function getSystemTimeString():String {
+	var now:Date = Date.now();
+	var h:Int = now.getHours();
+	var m:Int = now.getMinutes();
+	var s:Int = now.getSeconds();
+	return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
 
 function create() {
 	DiscordUtil.changePresenceAdvanced({
@@ -90,7 +99,9 @@ function create() {
 	name.text = name.text + (weirdName ? '\nNot that easy to change?' : '');
 	add(name);
 	
-	time = new UndertaleText(name.x + 71, name.y + (weirdName ? 34 : 0), '0:00', 'left', FlxG.width, 1, 'FFFFFF', 'undertale-pixel');
+	// ========== 时间文本：显示当前系统时间 ==========
+	var initTimeString:String = getSystemTimeString();
+	time = new UndertaleText(name.x + 71, name.y + (weirdName ? 34 : 0), initTimeString, 'left', FlxG.width, 1, 'FFFFFF', 'undertale-pixel');
 	add(time);
 	
 	var mapLength:Int = 0;
@@ -109,29 +120,26 @@ function create() {
 	}
 	add(accuracy);
 
-	// ---------- 创建菜单选项，固定垂直位置 ----------
+	// ---------- 创建菜单选项 ----------
 	var total = menuOptions.length;
-	var baseY = FlxG.height / 2 - 20;   // 整体再往上一点
-	var baseX:Float = 480;              // 水平基准位置（与原代码一致）
+	var baseY = FlxG.height / 2 - 20;
+	var baseX:Float = 480;
 	
 	for (i in 0...total) {
 		var menu = menuOptions[i];
 		var option:UndertaleText = new UndertaleText(baseX, 0, menu.toLowerCase(), 'left', FlxG.width, 1, 'FFFFFF', 'wonder');
-		// 计算初始Y：居中后根据索引偏移
 		var initialY = baseY + (i - (total - 1) / 2) * objectDistance;
 		option.y = initialY;
 		option.ID = i;
-		// 设置触控宽度：故事模式为160，其他为120
 		if (menu.toLowerCase() == 'story mode') {
-			option.fieldWidth = 160;   // 故事模式单独加宽
+			option.fieldWidth = 160;
 		} else {
 			option.fieldWidth = 120;
 		}
 		option.updateHitbox();
 		add(option);
-		// 保存原始X，Y则存储在 object[1] 中
 		originalX.push(baseX);
-		menuObjects.push([option, initialY, i, baseX]); // 存储 [text, originalY, index, originalX]
+		menuObjects.push([option, initialY, i, baseX]);
 		if (menu.toLowerCase() == 'story mode') {
 			storyModeButton = option;
 		}
@@ -145,7 +153,6 @@ function create() {
 	#end
 	initializeMode();
 	
-	// 入场动画处理：根据来源 data 设置不同的补间动画，并在动画结束时允许交互
 	switch(data) {
 		case 'freeplay':
 			camera.x = -500;
@@ -176,7 +183,6 @@ function create() {
 				canInteract = true;
 			}});
 		default:
-			// 没有入场动画，直接允许交互
 			canInteract = true;
 	}
 	
@@ -207,7 +213,7 @@ function initializeMode() {
 	if (inputMode == "keyboard") {
 		resetKeyboardSelection();
 	} else {
-		curSelected = getFirstVisibleIndex(); // 触摸下仅用于执行
+		curSelected = getFirstVisibleIndex();
 	}
 }
 
@@ -230,7 +236,6 @@ function resetKeyboardSelection() {
 function switchToTouch() {
 	if (inputMode == "touch") return;
 	inputMode = "touch";
-	// 清除键盘高亮
 	for (object in menuObjects) {
 		object[0].color = FlxColor.WHITE;
 	}
@@ -241,7 +246,6 @@ function switchToTouch() {
 function switchToKeyboard() {
 	if (inputMode == "keyboard") return;
 	inputMode = "keyboard";
-	// 清除触摸悬停
 	if (hoveredObject != null) {
 		hoveredObject.color = FlxColor.WHITE;
 		hoveredObject = null;
@@ -250,7 +254,7 @@ function switchToKeyboard() {
 }
 
 var lerp:Float = 0;
-var lastTime:Int = 0;
+var lastTimeString:String = "";
 var transitionTime:Float = 0.25;
 
 // ========== 执行当前选中选项 ==========
@@ -271,16 +275,13 @@ function acceptCurrentOption() {
 				if (storyModeButton.visible) {
 					explode();
 					storyModeButton.visible = false;
-					// 移除第一个选项
 					menuObjects.shift();
 					menuOptions.shift();
 					originalX.shift();
-					// 更新剩余选项的 ID 和索引
 					for (object in menuObjects) {
 						object[2] = object[2] - 1;
 						object[0].ID = object[0].ID -= 1;
 					}
-					// 整体上移一个间距：将每个选项的原始 Y 减去 objectDistance
 					for (object in menuObjects) {
 						object[1] -= objectDistance;
 					}
@@ -318,13 +319,15 @@ function acceptCurrentOption() {
 }
 
 function update(elapsed:Float) {
-	// 时间显示更新（不受交互限制）
-	if (lastTime != FlxG.save.data.timePlayed) {
-		time.text = FlxStringUtil.formatTime(FlxG.save.data.timePlayed);
-		lastTime = FlxG.save.data.timePlayed;
+	// ========== 系统时间刷新（每帧检查，秒变化才更新） ==========
+	var currentTimeString:String = getSystemTimeString();
+	if (time.text != currentTimeString) {
+		time.text = currentTimeString;
+		time.updateHitbox();
+		lastTimeString = currentTimeString;
 	}
 
-	// 选项动画插值（总是执行，保持视觉流畅）
+	// 选项动画插值
 	lerp = Math.exp(-elapsed * 24.6);
 	var selectedID:Int = (inputMode == "touch" && hoveredObject != null) ? hoveredObject.ID : (inputMode == "keyboard" ? curSelected : -1);
 	for (i in 0...menuObjects.length) {
@@ -356,9 +359,7 @@ function update(elapsed:Float) {
 	}
 	explosion.setPosition(storyModeButton.x + 40, storyModeButton.y - 44);
 
-	// 只有在入场动画结束后才允许任何交互
 	if (!canInteract) return;
-
 	if (optionSelected) return;
 
 	// ========== 模式切换检测 ==========
