@@ -21,7 +21,7 @@ var selected:Int = 0;
 var optionSelected:Bool = false;
 var optionObjects:Array<Dynamic> = [];
 
-// ========== 修改点 1：在 categories 数组最后添加 Mobile Settings ==========
+// ========== 修改点 1：在 categories 数组最后添加 Mobile Control Settings ==========
 var categories:Array<Dynamic> = [
 	{
 		title: 'Controls',
@@ -736,14 +736,14 @@ function performAccept() {
 	optionSelected = true;
 	inSubState = true;
 	
-	// ========== 修改点 3：处理 mobile settings 并隐藏主菜单 UI 防止错乱 ==========
+	// ========== 修改点 3：处理 Mobile Control Settings 并隐藏主菜单 UI 防止错乱 ==========
 	switch(categories[selected].title.toLowerCase()) {
 		case 'controls':
 			openSubState(new ModSubState('OptionsKeybinds', [{
 				originalBg: bg
 			}]));
 			specialSubMenu = true;
-		case 'mobile settings':
+		case 'mobile control settings':
 			// 隐藏上层菜单的背景和标题，防止与移动端设置界面重叠造成UI错乱
 			bg.visible = false;
 			title.visible = false;
