@@ -41,7 +41,7 @@ var categories:Array<Dynamic> = [
 	},
 	// 新增的手机设置选项，英文名用于调度，描述用英文以防翻译缺失
 	{
-		title: 'Mobile Settings',
+		title: 'Mobile Control Settings',
 		description: '*Open the mobile control/ñconfiguration menu.'
 	}
 ];

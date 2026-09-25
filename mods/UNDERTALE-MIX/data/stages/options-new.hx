@@ -70,20 +70,26 @@ function postCreate() {
 		'controls',
 		'gameplay',
 		'appearance',
-		'miscellaneous'
+		'miscellaneous',
+		'Mobile Control Settings'
 	];
 	if (FlxG.save.data.devMode) { optionList.push('debug'); }
 	
 	bf.setPosition(42, 74 + charY);
 	camGame.targetOffset.y = -20;
 	
+	// 找到角色里最靠前的那个索引（bf 或 dad 里较小的），把设置选项插到它下面
+	var charIndex:Int = Math.min(members.indexOf(bf), members.indexOf(dad));
+	
 	title = new UndertaleText(-482, -4, 'OPTIONS', 'center', FlxG.width, 2, 'FFFFFF', 'undertale-outline');
-	add(title);
+	insert(charIndex, title);
+	charIndex++;
 	
 	var index:Int = 0;
 	for (option in optionList) {
 		var o:UndertaleText = new UndertaleText(114, 34 + (18 * index) , option.toUpperCase(), 'left', FlxG.width, 1.2, 'FFFFFF', 'undertale-outline');
-		add(o);
+		insert(charIndex, o);
+		charIndex++;
 		options.push(o);
 		index++;
 	}
